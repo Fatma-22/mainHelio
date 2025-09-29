@@ -27,6 +27,20 @@ use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PermissionController;
 
+// Debug route for Cloudinary configuration
+Route::get('/debug/cloudinary', function () {
+    return [
+        'cloud_name' => config('services.cloudinary.cloud_name'),
+        'api_key' => config('services.cloudinary.api_key') ? 'SET' : 'NOT SET',
+        'api_secret' => config('services.cloudinary.api_secret') ? 'SET' : 'NOT SET',
+        'env_vars' => [
+            'CLOUDINARY_CLOUD_NAME' => env('CLOUDINARY_CLOUD_NAME'),
+            'CLOUDINARY_API_KEY' => env('CLOUDINARY_API_KEY') ? 'SET' : 'NOT SET',
+            'CLOUDINARY_API_SECRET' => env('CLOUDINARY_API_SECRET') ? 'SET' : 'NOT SET'
+        ]
+    ];
+});
+
 /*
 |--------------------------------------------------------------------------
 | Public Routes

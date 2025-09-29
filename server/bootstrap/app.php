@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // إضافة هذا السطر لتكوين Sanctum
         $middleware->statefulApi();
         
+        // Add CORS middleware to API routes
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+        
         $middleware->alias([
             'auth' => \App\Http\Middleware\Authenticate::class,
             'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,

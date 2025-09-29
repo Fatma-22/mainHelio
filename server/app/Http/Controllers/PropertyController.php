@@ -20,16 +20,16 @@ class PropertyController extends Controller
         $this->imageService = $imageService;
     }
 
-    // دالة مساعدة لتحويل المسار الجزئي إلى رابط كامل
-    private function getFullImageUrl($path)
-    {
-        if (!$path) return null;
-        if (strpos($path, 'http://') === 0 || strpos($path, 'https://') === 0) return $path;
-    
-        // لا حاجة لتعديل المسار لأننا نخزن المسار الكامل بالفعل
-        return url('storage/' . $path);
-    }
-    
+        // دالة مساعدة لتحويل المسار الجزئي إلى رابط كامل
+        private function getFullImageUrl($path)
+        {
+            if (!$path) return null;
+            if (strpos($path, 'http://') === 0 || strpos($path, 'https://') === 0) return $path;
+        
+            // لا حاجة لتعديل المسار لأننا نخزن المسار الكامل بالفعل
+            return url('storage/' . $path);
+        }
+        
     public function index(Request $request)
     {
         $query = Property::with(['images', 'amenities', 'staff'])
@@ -65,7 +65,7 @@ class PropertyController extends Controller
                 return response()->noContent(304);
             }
         }
-    
+     
         $properties->transform(function ($property) {
             if ($property->images) {
                 $property->images->transform(function ($image) {
@@ -99,7 +99,7 @@ class PropertyController extends Controller
                 return response()->noContent(304);
             }
         }
-    
+
         if ($property->images) {
             $property->images->transform(function ($image) {
                 $image->url = $this->getFullImageUrl($image->url);
@@ -108,7 +108,7 @@ class PropertyController extends Controller
                 return $image;
             });
         }
-    
+        
         return response()->json($property)
             ->header('Last-Modified', $lastModifiedHeader)
             ->header('Cache-Control', 'public, max-age=0');
@@ -151,7 +151,7 @@ class PropertyController extends Controller
             'amenities' => 'nullable|array',
             'amenities.*' => 'exists:amenities,id',
             'images' => 'nullable|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120', // زيادة الحد الأقصى للحجم
+            'images.*' => 'image|mimes:jpeg,jpg,png,gif,bmp,webp|max:5120', // زيادة الحد الأقصى للحجم
             'imagesData' => 'nullable|array',
             'imagesData.*.sort' => 'nullable|integer',
             'imagesData.*.isFeatured' => 'nullable|boolean',
@@ -225,13 +225,16 @@ class PropertyController extends Controller
         return response()->json(['message' => 'Unauthorized - You can only edit your own properties'], 403);
     }
     
-    // تحويل isFeatured إلى boolean قبل الفاليديشن
+    // تحويل isFeatured و _destroy إلى boolean قبل الفاليديشن
     if ($request->has('imagesData')) {
         $imagesData = $request->input('imagesData');
         if (is_array($imagesData)) {
             foreach ($imagesData as $key => $imageData) {
                 if (isset($imageData['isFeatured'])) {
                     $imagesData[$key]['isFeatured'] = filter_var($imageData['isFeatured'], FILTER_VALIDATE_BOOLEAN);
+                }
+                if (isset($imageData['_destroy'])) {
+                    $imagesData[$key]['_destroy'] = filter_var($imageData['_destroy'], FILTER_VALIDATE_BOOLEAN);
                 }
             }
             $request->merge(['imagesData' => $imagesData]);
@@ -260,7 +263,7 @@ class PropertyController extends Controller
         'amenities' => 'nullable|array',
         'amenities.*' => 'exists:amenities,id',
         'images' => 'nullable|array',
-        'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
+        'images.*' => 'image|mimes:jpeg,jpg,png,gif,bmp,webp|max:5120',
         'imagesData' => 'nullable|array',
         'imagesData.*.id' => 'nullable|integer', // تغيير إلى nullable
         'imagesData.*.sort' => 'nullable|integer',
@@ -296,11 +299,11 @@ class PropertyController extends Controller
     
     $property->update($updateData);
     
-    // معالجة الصور الموجودة (تحديث أو حذف)
-   // معالجة الصور الموجودة (تحديث أو حذف)
+    // معالجة الصور الموجودة (تحديث أو حذف) + حذف الصور غير المستخدمة
     if ($request->has('imagesData')) {
         $imagesData = $request->input('imagesData');
-        
+
+        // 1) حدّث/احذف الصور المذكورة صراحة في imagesData
         foreach ($imagesData as $imageData) {
             // إذا كانت الصورة محذوفة
             if (isset($imageData['_destroy']) && $imageData['_destroy']) {
@@ -312,7 +315,7 @@ class PropertyController extends Controller
                 }
                 continue;
             }
-            
+
             // إذا كانت الصورة موجودة مسبقاً
             if (isset($imageData['id'])) {
                 $image = PropertyImage::find($imageData['id']);
@@ -325,6 +328,27 @@ class PropertyController extends Controller
                     ]);
                 }
             }
+        }
+
+        // 2) احذف أي صور موجودة في قاعدة البيانات وليست ضمن imagesData (غير مستخدمة)
+        $keepIds = collect($imagesData)
+            ->filter(function ($item) {
+                return isset($item['id']) && empty($item['_destroy']);
+            })
+            ->pluck('id')
+            ->all();
+
+        $orphanImages = PropertyImage::where('property_id', $property->id)
+            ->when(!empty($keepIds), function ($q) use ($keepIds) {
+                $q->whereNotIn('id', $keepIds);
+            }, function ($q) {
+                // إذا لم توجد أي معرفات للحفظ، احذف كل الصور
+                return $q; 
+            })
+            ->get();
+
+        foreach ($orphanImages as $orphan) {
+            $this->imageService->deleteImage($orphan);
         }
     }
     
@@ -439,7 +463,7 @@ class PropertyController extends Controller
 
         $validator = Validator::make($request->all(), [
             'images' => 'required|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120', // زيادة الحد الأقصى للحجم
+            'images.*' => 'image|mimes:jpeg,jpg,png,gif,bmp,webp|max:5120', // زيادة الحد الأقصى للحجم
             'imagesData' => 'required|array',
             'imagesData.*.sort' => 'nullable|integer',
             'imagesData.*.isFeatured' => 'nullable|boolean',

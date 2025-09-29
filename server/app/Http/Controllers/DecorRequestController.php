@@ -122,7 +122,7 @@ class DecorRequestController extends Controller
             'type' => 'required|string',
             'details' => 'required|string',
             'reference_item_id' => 'nullable|exists:portfolio_items,id',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'image' => 'nullable|image|mimes:jpeg,jpg,png,gif,bmp,webp|max:5120',
             'altText' => 'nullable|string|max:255',
             'caption' => 'nullable|string|max:255',
         ]);
@@ -221,7 +221,7 @@ class DecorRequestController extends Controller
             'status' => 'sometimes|required|in:جديد,تم التواصل,قيد التنفيذ,مكتمل,ملغي',
             'assigned_to' => 'nullable|exists:staff,id',
             'notes' => 'nullable|string',
-            'image' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'image' => 'sometimes|image|mimes:jpeg,jpg,png,gif,bmp,webp|max:5120',
             'altText' => 'nullable|string|max:255',
             'caption' => 'nullable|string|max:255',
         ]);

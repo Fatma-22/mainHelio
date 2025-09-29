@@ -279,7 +279,7 @@ public function approve($id)
         'ownerEmail' => 'nullable|email|max:255',
         'contactTime' => 'nullable|string|max:255|in:morning,afternoon,evening',
         'images' => 'nullable|array',
-        'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
+        'images.*' => 'image|mimes:jpeg,jpg,png,gif,bmp,webp|max:5120',
         'imagesData' => 'nullable|array',
         'imagesData.*.sort' => 'nullable|integer',
         'imagesData.*.isFeatured' => 'nullable|boolean',
@@ -391,7 +391,7 @@ public function approve($id)
 
         $validator = Validator::make($request->all(), [
             'images' => 'required|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120', // زيادة الحد الأقصى للحجم
+            'images.*' => 'image|mimes:jpeg,jpg,png,gif,bmp,webp|max:5120', // زيادة الحد الأقصى للحجم
             'imagesData' => 'required|array',
             'imagesData.*.sort' => 'nullable|integer',
             'imagesData.*.isFeatured' => 'nullable|boolean',

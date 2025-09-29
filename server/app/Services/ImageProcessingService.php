@@ -6,9 +6,68 @@ use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\PropertyImage;
+use Cloudinary\Cloudinary;
+use Cloudinary\Configuration\Configuration;
 
 class ImageProcessingService
 {
+    protected $cloudinary;
+    protected $isCloudinaryConfigured = false;
+
+    public function __construct()
+    {
+        // Don't initialize Cloudinary in constructor - do it lazily
+    }
+
+    /**
+     * Initialize Cloudinary configuration
+     */
+    private function initializeCloudinary()
+    {
+        if ($this->isCloudinaryConfigured) {
+            return;
+        }
+
+        $cloudName = config('services.cloudinary.cloud_name');
+        $apiKey = config('services.cloudinary.api_key');
+        $apiSecret = config('services.cloudinary.api_secret');
+        
+        // Debug: Log the configuration values (remove in production)
+        \Log::info('Cloudinary Config Debug', [
+            'cloud_name' => $cloudName ? 'SET' : 'NOT SET',
+            'api_key' => $apiKey ? 'SET' : 'NOT SET',
+            'api_secret' => $apiSecret ? 'SET' : 'NOT SET',
+            'cloud_name_value' => $cloudName,
+            'api_key_value' => $apiKey ? substr($apiKey, 0, 4) . '...' : 'NOT SET',
+            'all_env_vars' => [
+                'CLOUDINARY_CLOUD_NAME' => env('CLOUDINARY_CLOUD_NAME'),
+                'CLOUDINARY_API_KEY' => env('CLOUDINARY_API_KEY') ? 'SET' : 'NOT SET',
+                'CLOUDINARY_API_SECRET' => env('CLOUDINARY_API_SECRET') ? 'SET' : 'NOT SET'
+            ]
+        ]);
+        
+        if (!$cloudName || !$apiKey || !$apiSecret) {
+            throw new \Exception('Cloudinary configuration is missing. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your .env file. Current values: CloudName=' . ($cloudName ?: 'NULL') . ', ApiKey=' . ($apiKey ? 'SET' : 'NULL') . ', ApiSecret=' . ($apiSecret ? 'SET' : 'NULL'));
+        }
+
+        try {
+            $this->cloudinary = new Cloudinary([
+                'cloud' => [
+                    'cloud_name' => $cloudName,
+                    'api_key' => $apiKey,
+                    'api_secret' => $apiSecret,
+                ],
+                'url' => [
+                    'secure' => true
+                ]
+            ]);
+             
+            $this->isCloudinaryConfigured = true;
+        } catch (\Exception $e) {
+            throw new \Exception('Failed to initialize Cloudinary: ' . $e->getMessage());
+        }
+    }
+
     // الأحجام المختلفة للصور
     protected $sizes = [
         'thumbnail' => [
@@ -33,11 +92,14 @@ class ImageProcessingService
      */
     public function processAndStoreImage($file, $propertyId, $imageData = [])
     {
+        // Initialize Cloudinary
+        $this->initializeCloudinary();
+
         // إنشاء اسم فريد للملف
         $originalName = $file->getClientOriginalName();
         $fileName = pathinfo($originalName, PATHINFO_FILENAME);
         $fileExtension = $file->getClientOriginalExtension();
-        $uniqueName = $fileName . '-' . uniqid() . '.' . $fileExtension;
+        $uniqueName = 'property_' . $propertyId . '_' . uniqid();
 
         // معالجة الصورة الأساسية
         $image = Image::make($file);
@@ -46,34 +108,31 @@ class ImageProcessingService
         $originalWidth = $image->width();
         $originalHeight = $image->height();
         
-        // ضغط الصورة مع الحفاظ على الجودة
-        $image->encode($fileExtension, 85);
+        // رفع الصورة الأصلية إلى Cloudinary
+        $originalUpload = $this->cloudinary->uploadApi()->upload(
+            $file->getRealPath(),
+            [
+                'public_id' => $uniqueName . '_original',
+                'folder' => 'properties/original',
+                'quality' => 'auto',
+                'fetch_format' => 'auto',
+            ]
+        );
         
-        // حفظ الصورة الأصلية
-        $originalPath = $file->storeAs('properties/original', $uniqueName, 'public');
-        
-        // إنشاء الصور بحجم مختلف
-        $paths = [
-            'original' => $originalPath,
+        // إنشاء URLs للأحجام المختلفة باستخدام Cloudinary transformations
+        $urls = [
+            'original' => $originalUpload['secure_url'],
+            'thumbnail' => $this->cloudinary->image($originalUpload['public_id'])
+                ->resize(\Cloudinary\Transformation\Resize::fill($this->sizes['thumbnail']['width'], $this->sizes['thumbnail']['height']))
+                ->quality('auto')
+                ->format('auto')
+                ->toUrl(),
+            'medium' => $this->cloudinary->image($originalUpload['public_id'])
+                ->resize(\Cloudinary\Transformation\Resize::fill($this->sizes['medium']['width'], $this->sizes['medium']['height']))
+                ->quality('auto')
+                ->format('auto')
+                ->toUrl(),
         ];
-        
-        foreach ($this->sizes as $sizeName => $size) {
-            $resizedImage = Image::make($file);
-            
-            // الحفاظ على نسبة الأبعاد
-            $resizedImage->resize($size['width'], $size['height'], function ($constraint) {
-                $constraint->aspectRatio();
-                $constraint->upsize();
-            });
-            
-            // ضغط الصورة
-            $resizedImage->encode($fileExtension, $size['quality']);
-            
-            // حفظ الصورة
-            $path = "properties/{$sizeName}/" . $uniqueName;
-            Storage::disk('public')->put($path, $resizedImage);
-            $paths[$sizeName] = $path;
-        }
         
         // إنشاء نص بديل تلقائي للـ SEO إذا لم يتم توفيره
         $altText = $imageData['altText'] ?? $this->generateAltText($fileName);
@@ -84,9 +143,9 @@ class ImageProcessingService
         // حفظ بيانات الصورة في قاعدة البيانات
         $propertyImage = PropertyImage::create([
             'property_id' => $propertyId,
-            'url' => $paths['original'],
-            'thumbnail_url' => $paths['thumbnail'],
-            'medium_url' => $paths['medium'],
+            'url' => $urls['original'],
+            'thumbnail_url' => $urls['thumbnail'],
+            'medium_url' => $urls['medium'],
             'sort' => $imageData['sort'] ?? 0,
             'isfeatured' => $imageData['isFeatured'] ?? false,
             'altText' => $altText,
@@ -172,32 +231,95 @@ class ImageProcessingService
      */
     public function deleteImage($propertyImage)
     {
-        // حذف الملفات من التخزين
-        $paths = [
-            $propertyImage->url,
-            $propertyImage->thumbnail_url,
-            $propertyImage->medium_url,
-        ];
-        
-        foreach ($paths as $path) {
-            if ($path) {
-                Storage::disk('public')->delete($path);
+        // Initialize Cloudinary
+        $this->initializeCloudinary();
+
+        // حذف الصورة من Cloudinary
+        if ($propertyImage->url) {
+            // استخراج public_id من URL
+            $publicId = $this->extractPublicIdFromUrl($propertyImage->url);
+            if ($publicId) {
+                try {
+                    $this->cloudinary->uploadApi()->destroy($publicId);
+                } catch (\Exception $e) {
+                    // Log error but don't fail the deletion
+                    \Log::error('Failed to delete image from Cloudinary: ' . $e->getMessage());
+                }
             }
         }
         
-        // حذف السجل من قاعدة البيانات
-        $propertyImage->delete();
+        // حذف السجل نهائياً من قاعدة البيانات لضمان التزامن مع Cloudinary
+        if (method_exists($propertyImage, 'forceDelete')) {
+            $propertyImage->forceDelete();
+        } else {
+            $propertyImage->delete();
+        }
+    }
+
+    /**
+     * استخراج public_id من Cloudinary URL
+     */
+    private function extractPublicIdFromUrl($url)
+    {
+        if (strpos($url, 'cloudinary.com') === false) {
+            return null;
+        }
+
+        // مثال URL:
+        // https://res.cloudinary.com/<cloud>/image/upload/v1727282828/properties/original/property_123_abc_original.jpg
+        // المطلوب: properties/original/property_123_abc_original
+
+        $parsed = parse_url($url);
+        if (!isset($parsed['path'])) {
+            return null;
+        }
+
+        // إزالة البادئة حتى "/upload/"
+        $path = $parsed['path'];
+        $uploadPos = strpos($path, '/upload/');
+        if ($uploadPos === false) {
+            return null;
+        }
+
+        $afterUpload = substr($path, $uploadPos + strlen('/upload/'));
+
+        // إزالة جزء الإصدار إن وجد (مثل v1727282828)
+        $segments = array_values(array_filter(explode('/', $afterUpload)));
+        if (isset($segments[0]) && preg_match('/^v\d+$/', $segments[0])) {
+            array_shift($segments);
+        }
+
+        if (empty($segments)) {
+            return null;
+        }
+
+        // آخر عنصر يحتوي الاسم مع الامتداد؛ نزيل الامتداد
+        $filenameWithExt = array_pop($segments);
+        $publicIdBase = pathinfo($filenameWithExt, PATHINFO_FILENAME);
+
+        // أعد بناء المسار متضمناً المجلدات
+        $publicId = implode('/', $segments);
+        if (!empty($publicId)) {
+            $publicId .= '/' . $publicIdBase;
+        } else {
+            $publicId = $publicIdBase;
+        }
+
+        return $publicId;
     }
     /**
  * Process and store portfolio image
  */
 public function processAndStorePortfolioImage($file, $imageData = [])
 {
+    // Initialize Cloudinary
+    $this->initializeCloudinary();
+
     // Create unique filename
     $originalName = $file->getClientOriginalName();
     $fileName = pathinfo($originalName, PATHINFO_FILENAME);
     $fileExtension = $file->getClientOriginalExtension();
-    $uniqueName = $fileName . '-' . uniqid() . '.' . $fileExtension;
+    $uniqueName = 'portfolio_' . uniqid();
 
     // Process the main image
     $image = Image::make($file);
@@ -206,16 +328,16 @@ public function processAndStorePortfolioImage($file, $imageData = [])
     $originalWidth = $image->width();
     $originalHeight = $image->height();
     
-    // Compress the image while maintaining quality
-    $image->encode($fileExtension, 85);
-    
-    // Save the original image
-    $originalPath = $file->storeAs('portfolio/original', $uniqueName, 'public');
-    
-    // Create different sizes
-    $paths = [
-        'original' => $originalPath,
-    ];
+    // Upload original image to Cloudinary
+    $originalUpload = $this->cloudinary->uploadApi()->upload(
+        $file->getRealPath(),
+        [
+            'public_id' => $uniqueName . '_original',
+            'folder' => 'portfolio/original',
+            'quality' => 'auto',
+            'fetch_format' => 'auto',
+        ]
+    );
     
     // Portfolio-specific sizes
     $portfolioSizes = [
@@ -231,22 +353,17 @@ public function processAndStorePortfolioImage($file, $imageData = [])
         ],
     ];
     
+    // Create URLs for different sizes using Cloudinary transformations
+    $urls = [
+        'original' => $originalUpload['secure_url'],
+    ];
+    
     foreach ($portfolioSizes as $sizeName => $size) {
-        $resizedImage = Image::make($file);
-        
-        // Maintain aspect ratio
-        $resizedImage->resize($size['width'], $size['height'], function ($constraint) {
-            $constraint->aspectRatio();
-            $constraint->upsize();
-        });
-        
-        // Compress the image
-        $resizedImage->encode($fileExtension, $size['quality']);
-        
-        // Save the image
-        $path = "portfolio/{$sizeName}/" . $uniqueName;
-        Storage::disk('public')->put($path, $resizedImage);
-        $paths[$sizeName] = $path;
+        $urls[$sizeName] = $this->cloudinary->image($originalUpload['public_id'])
+            ->resize(\Cloudinary\Transformation\Resize::fill($size['width'], $size['height']))
+            ->quality('auto')
+            ->format('auto')
+            ->toUrl();
     }
     
     // Generate alt text automatically if not provided
@@ -257,9 +374,9 @@ public function processAndStorePortfolioImage($file, $imageData = [])
     
     // Return processed image data
     return (object)[
-        'url' => $paths['original'],
-        'thumbnail_url' => $paths['thumbnail'],
-        'medium_url' => $paths['medium'],
+        'url' => $urls['original'],
+        'thumbnail_url' => $urls['thumbnail'],
+        'medium_url' => $urls['medium'],
         'altText' => $altText,
         'caption' => $imageData['caption'] ?? null,
         'file_size' => $file->getSize(),
@@ -278,16 +395,18 @@ public function processAndStorePortfolioImage($file, $imageData = [])
  */
 public function deletePortfolioImage($portfolioItem)
 {
-    // Delete files from storage
-    $paths = [
-        $portfolioItem->cover_url,
-        $portfolioItem->thumbnail_url,
-        $portfolioItem->medium_url,
-    ];
-    
-    foreach ($paths as $path) {
-        if ($path) {
-            Storage::disk('public')->delete($path);
+    // Initialize Cloudinary
+    $this->initializeCloudinary();
+
+    // Delete image from Cloudinary
+    if ($portfolioItem->cover_url) {
+        $publicId = $this->extractPublicIdFromUrl($portfolioItem->cover_url);
+        if ($publicId) {
+            try {
+                $this->cloudinary->uploadApi()->destroy($publicId);
+            } catch (\Exception $e) {
+                \Log::error('Failed to delete portfolio image from Cloudinary: ' . $e->getMessage());
+            }
         }
     }
 }
@@ -357,11 +476,14 @@ private function generatePortfolioSeoKeywords($caption)
  */
 public function processAndStoreDecorRequestImage($file, $imageData = [])
 {
+    // Initialize Cloudinary
+    $this->initializeCloudinary();
+
     // Create unique filename
     $originalName = $file->getClientOriginalName();
     $fileName = pathinfo($originalName, PATHINFO_FILENAME);
     $fileExtension = $file->getClientOriginalExtension();
-    $uniqueName = $fileName . '-' . uniqid() . '.' . $fileExtension;
+    $uniqueName = 'decor_' . uniqid();
 
     // Process the main image
     $image = Image::make($file);
@@ -370,16 +492,16 @@ public function processAndStoreDecorRequestImage($file, $imageData = [])
     $originalWidth = $image->width();
     $originalHeight = $image->height();
     
-    // Compress the image while maintaining quality
-    $image->encode($fileExtension, 85);
-    
-    // Save the original image
-    $originalPath = $file->storeAs('decor-requests/original', $uniqueName, 'public');
-    
-    // Create different sizes
-    $paths = [
-        'original' => $originalPath,
-    ];
+    // Upload original image to Cloudinary
+    $originalUpload = $this->cloudinary->uploadApi()->upload(
+        $file->getRealPath(),
+        [
+            'public_id' => $uniqueName . '_original',
+            'folder' => 'decor-requests/original',
+            'quality' => 'auto',
+            'fetch_format' => 'auto',
+        ]
+    );
     
     // Decor request-specific sizes
     $decorSizes = [
@@ -395,22 +517,17 @@ public function processAndStoreDecorRequestImage($file, $imageData = [])
         ],
     ];
     
+    // Create URLs for different sizes using Cloudinary transformations
+    $urls = [
+        'original' => $originalUpload['secure_url'],
+    ];
+    
     foreach ($decorSizes as $sizeName => $size) {
-        $resizedImage = Image::make($file);
-        
-        // Maintain aspect ratio
-        $resizedImage->resize($size['width'], $size['height'], function ($constraint) {
-            $constraint->aspectRatio();
-            $constraint->upsize();
-        });
-        
-        // Compress the image
-        $resizedImage->encode($fileExtension, $size['quality']);
-        
-        // Save the image
-        $path = "decor-requests/{$sizeName}/" . $uniqueName;
-        Storage::disk('public')->put($path, $resizedImage);
-        $paths[$sizeName] = $path;
+        $urls[$sizeName] = $this->cloudinary->image($originalUpload['public_id'])
+            ->resize(\Cloudinary\Transformation\Resize::fill($size['width'], $size['height']))
+            ->quality('auto')
+            ->format('auto')
+            ->toUrl();
     }
     
     // Generate alt text automatically if not provided
@@ -421,9 +538,9 @@ public function processAndStoreDecorRequestImage($file, $imageData = [])
     
     // Return processed image data
     return (object)[
-        'url' => $paths['original'],
-        'thumbnail_url' => $paths['thumbnail'],
-        'medium_url' => $paths['medium'],
+        'url' => $urls['original'],
+        'thumbnail_url' => $urls['thumbnail'],
+        'medium_url' => $urls['medium'],
         'altText' => $altText,
         'caption' => $imageData['caption'] ?? null,
         'file_size' => $file->getSize(),
@@ -442,16 +559,18 @@ public function processAndStoreDecorRequestImage($file, $imageData = [])
  */
 public function deleteDecorRequestImage($decorRequest)
 {
-    // Delete files from storage
-    $paths = [
-        $decorRequest->image,
-        $decorRequest->thumbnail_url,
-        $decorRequest->medium_url,
-    ];
-    
-    foreach ($paths as $path) {
-        if ($path) {
-            Storage::disk('public')->delete($path);
+    // Initialize Cloudinary
+    $this->initializeCloudinary();
+
+    // Delete image from Cloudinary
+    if ($decorRequest->image) {
+        $publicId = $this->extractPublicIdFromUrl($decorRequest->image);
+        if ($publicId) {
+            try {
+                $this->cloudinary->uploadApi()->destroy($publicId);
+            } catch (\Exception $e) {
+                \Log::error('Failed to delete decor request image from Cloudinary: ' . $e->getMessage());
+            }
         }
     }
 }
