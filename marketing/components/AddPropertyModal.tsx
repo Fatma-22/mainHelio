@@ -302,31 +302,17 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      // const propertyDataToSend = {
-      // ...formData,
-      // listing_plan: formData.listingPlan,
-      // alt_texts: images.map((img) => img.altText),
-      // featured_images: images.map((img) => (img.isFeatured ? 1 : 0)),
-      // };
-
-      // // استخدام الصور المرفوعة إذا كانت متاحة، وإلا استخدام الصور الأصلية
-      // const imageFiles =
-      //   uploadedImages.length > 0
-      //     ? uploadedImages.map((img) => img.file)
-      //     : images.map((img) => img.file);
-
-      // await createProperty(propertyDataToSend, imageFiles);
-
       const processedData: any = {
         ...formData,
         listing_plan: formData.listingPlan,
         alt_texts: images.map((img) => img.altText),
         featured_images: images.map((img) => (img.isFeatured ? 1 : 0)),
+        area: formData.area !== "" ? parseFloat(formData.area) : 0,
+        bedrooms: formData.bedrooms !== "" ? parseInt(formData.bedrooms) : 0,
+        bathrooms: formData.bathrooms !== "" ? parseInt(formData.bathrooms) : 0,
       };
 
-      // معالجة الصور
       if (images.length > 0) {
-        // استخراج الصور الجديدة فقط (التي تحتوي على ملف)
         const newImages = images
           .filter((img) => !img.isExisting && img.file)
           .map((img) => img.file);
@@ -335,16 +321,13 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           processedData.images = newImages;
         }
 
-        // تجهيز بيانات جميع الصور (الموجودة والجديدة)
         const imagesData = images.map((img, index) => {
-          const imageData: any = {
+          return {
             sort: img.sort ?? index,
-            isFeatured: img.isFeatured === true,
+            isFeatured: !!img.isFeatured,
             altText: img.altText || "",
             caption: img.caption || "",
           };
-
-          return imageData;
         });
 
         processedData.imagesData = imagesData;
@@ -368,7 +351,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   return (
     <div
       className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center p-4 transition-opacity duration-300"
-      onClick={handleClose}
+      onClick={isSubmitting ? undefined : handleClose}
       aria-modal="true"
       role="dialog"
     >
@@ -378,11 +361,37 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-8">
+          {isSubmitting && (
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] z-20 flex items-center justify-center">
+              <div className="flex items-center gap-3 text-gray-200">
+                <svg
+                  className="animate-spin h-5 w-5 text-amber-400"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  ></path>
+                </svg>
+                <span>{t.submitting}</span>
+              </div>
+            </div>
+          )}
           <button
             onClick={handleClose}
             className={`absolute top-4 ${
               language === "ar" ? "left-4" : "right-4"
-            } text-gray-400 hover:text-white transition-colors`}
+            } text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+            disabled={isSubmitting}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -404,302 +413,303 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="border-b border-gray-700 pb-6">
-              <h3 className="text-lg font-semibold text-gray-100 mb-4">
-                {t.ownerInfo}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField label={t.fullName} id="ownerName">
-                  <input
-                    type="text"
-                    id="ownerName"
-                    className={`${inputClasses} ${
-                      errors.ownerName ? "border-red-500" : ""
-                    }`}
-                    required
-                    value={formData.ownerName}
-                    onChange={handleChange}
-                  />
-                  {errors.ownerName && (
-                    <div className="text-red-500 text-sm mt-1">
-                      {errors.ownerName}
-                    </div>
-                  )}
-                </FormField>
-                <FormField label={t.phone} id="ownerPhone">
-                  <input
-                    type="tel"
-                    id="ownerPhone"
-                    className={`${inputClasses} ${
-                      errors.ownerPhone ? "border-red-500" : ""
-                    }`}
-                    required
-                    dir="ltr"
-                    value={formData.ownerPhone}
-                    onChange={handleChange}
-                  />
-                  {errors.ownerPhone && (
-                    <div className="text-red-500 text-sm mt-1">
-                      {errors.ownerPhone}
-                    </div>
-                  )}
-                </FormField>
-                <FormField label={t.emailOptional} id="ownerEmail">
-                  <input
-                    type="email"
-                    id="ownerEmail"
-                    required
-                    className={`${inputClasses} ${
-                      errors.ownerEmail ? "border-red-500" : ""
-                    }`}
-                    value={formData.ownerEmail}
-                    onChange={handleChange}
-                  />
-                  {errors.ownerEmail && (
-                    <div className="text-red-500 text-sm mt-1">
-                      {errors.ownerEmail}
-                    </div>
-                  )}
-                </FormField>
-                <FormField label={t.contactTime} id="contactTime">
-                  <select
-                    id="contactTime"
-                    className={`${selectClasses} ${
-                      errors.contactTime ? "border-red-500" : ""
-                    }`}
-                    required
-                    value={formData.contactTime}
-                    onChange={handleChange}
-                  >
-                    <option value="">{t.selectTime}</option>
-                    <option value="morning">{t.morning}</option>
-                    <option value="afternoon">{t.afternoon}</option>
-                    <option value="evening">{t.evening}</option>
-                  </select>
-                  {errors.contactTime && (
-                    <div className="text-red-500 text-sm mt-1">
-                      {errors.contactTime}
-                    </div>
-                  )}
-                </FormField>
-              </div>
-            </div>
-            <div className="border-b border-gray-700 pb-6">
-              <h3 className="text-lg font-semibold text-gray-100 mb-4">
-                {t.propertyDetails}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField label={t.propertyType} id="type">
-                  <select
-                    id="type"
-                    className={`${selectClasses} ${
-                      errors.type ? "border-red-500" : ""
-                    }`}
-                    required
-                    value={formData.type}
-                    onChange={handleChange}
-                  >
-                    <option value="">{t.selectType}</option>
-                    <option value="شقة">{t.apartment}</option>
-                    <option value="فيلا">{t.villa}</option>
-                    <option value="تجاري">{t.commercial}</option>
-                    <option value="ارض">{t.land}</option>
-                  </select>
-                  {errors.type && (
-                    <div className="text-red-500 text-sm mt-1">
-                      {errors.type}
-                    </div>
-                  )}
-                </FormField>
-                <FormField label={t.area} id="area">
-                  <input
-                    type="text"
-                    id="area"
-                    className={`${inputClasses} ${
-                      errors.area ? "border-red-500" : ""
-                    }`}
-                    required
-                    min="1"
-                    value={formData.area}
-                    onChange={handleChange}
-                  />
-                  {errors.area && (
-                    <div className="text-red-500 text-sm mt-1">
-                      {errors.area}
-                    </div>
-                  )}
-                </FormField>
-                {showBedroomAndBathFields && (
-                  <>
-                    <FormField label={t.bedrooms} id="bedrooms">
-                      <input
-                        type="text"
-                        id="bedrooms"
-                        className={`${inputClasses} ${
-                          errors.bedrooms ? "border-red-500" : ""
-                        }`}
-                        required
-                        min="0"
-                        value={formData.bedrooms}
-                        onChange={handleChange}
-                      />
-                      {errors.bedrooms && (
-                        <div className="text-red-500 text-sm mt-1">
-                          {errors.bedrooms}
-                        </div>
-                      )}
-                    </FormField>
-                    <FormField label={t.bathrooms} id="bathrooms">
-                      <input
-                        type="text"
-                        id="bathrooms"
-                        className={`${inputClasses} ${
-                          errors.bathrooms ? "border-red-500" : ""
-                        }`}
-                        required
-                        min="0"
-                        value={formData.bathrooms}
-                        onChange={handleChange}
-                      />
-                      {errors.bathrooms && (
-                        <div className="text-red-500 text-sm mt-1">
-                          {errors.bathrooms}
-                        </div>
-                      )}
-                    </FormField>
-                  </>
-                )}
-                {showFinishField && (
-                  <FormField label={t.finishing} id="finish">
+            <fieldset disabled={isSubmitting} className="disabled:opacity-75">
+              <div className="border-b border-gray-700 pb-6">
+                <h3 className="text-lg font-semibold text-gray-100 mb-4">
+                  {t.ownerInfo}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField label={t.fullName} id="ownerName">
+                    <input
+                      type="text"
+                      id="ownerName"
+                      className={`${inputClasses} ${
+                        errors.ownerName ? "border-red-500" : ""
+                      }`}
+                      required
+                      value={formData.ownerName}
+                      onChange={handleChange}
+                    />
+                    {errors.ownerName && (
+                      <div className="text-red-500 text-sm mt-1">
+                        {errors.ownerName}
+                      </div>
+                    )}
+                  </FormField>
+                  <FormField label={t.phone} id="ownerPhone">
+                    <input
+                      type="tel"
+                      id="ownerPhone"
+                      className={`${inputClasses} ${
+                        errors.ownerPhone ? "border-red-500" : ""
+                      }`}
+                      required
+                      dir="ltr"
+                      value={formData.ownerPhone}
+                      onChange={handleChange}
+                    />
+                    {errors.ownerPhone && (
+                      <div className="text-red-500 text-sm mt-1">
+                        {errors.ownerPhone}
+                      </div>
+                    )}
+                  </FormField>
+                  <FormField label={t.emailOptional} id="ownerEmail">
+                    <input
+                      type="email"
+                      id="ownerEmail"
+                      required
+                      className={`${inputClasses} ${
+                        errors.ownerEmail ? "border-red-500" : ""
+                      }`}
+                      value={formData.ownerEmail}
+                      onChange={handleChange}
+                    />
+                    {errors.ownerEmail && (
+                      <div className="text-red-500 text-sm mt-1">
+                        {errors.ownerEmail}
+                      </div>
+                    )}
+                  </FormField>
+                  <FormField label={t.contactTime} id="contactTime">
                     <select
-                      id="finish"
+                      id="contactTime"
                       className={`${selectClasses} ${
-                        errors.finish ? "border-red-500" : ""
+                        errors.contactTime ? "border-red-500" : ""
                       }`}
                       required
-                      value={formData.finish || ""}
+                      value={formData.contactTime}
                       onChange={handleChange}
                     >
-                      <option value="">{t.selectFinish}</option>
-                      <option value="على الطوب">{t.basic}</option>
-                      <option value="نص تشطيب">{t.semi}</option>
-                      <option value="تشطيب كامل">{t.full}</option>
+                      <option value="">{t.selectTime}</option>
+                      <option value="morning">{t.morning}</option>
+                      <option value="afternoon">{t.afternoon}</option>
+                      <option value="evening">{t.evening}</option>
                     </select>
-                    {errors.finish && (
+                    {errors.contactTime && (
                       <div className="text-red-500 text-sm mt-1">
-                        {errors.finish}
-                      </div>
-                    )}
-                  </FormField>
-                )}
-                <FormField label={t.status} id="status">
-                  <select
-                    id="status"
-                    className={`${selectClasses} ${
-                      errors.status ? "border-red-500" : ""
-                    }`}
-                    required
-                    value={formData.status}
-                    onChange={handleChange}
-                  >
-                    <option value="">{t.selectStatus}</option>
-                    <option value="للبيع">{t.forSale}</option>
-                    <option value="للإيجار">{t.forRent}</option>
-                  </select>
-                  {errors.status && (
-                    <div className="text-red-500 text-sm mt-1">
-                      {errors.status}
-                    </div>
-                  )}
-                </FormField>
-                <div className="md:col-span-2">
-                  <FormField label={t.price} id="price">
-                    <input
-                      type="text"
-                      id="price"
-                      className={`${inputClasses} ${
-                        errors.price ? "border-red-500" : ""
-                      }`}
-                      required
-                      min="0"
-                      value={formData.price}
-                      onChange={handleChange}
-                    />
-                    {errors.price && (
-                      <div className="text-red-500 text-sm mt-1">
-                        {errors.price}
+                        {errors.contactTime}
                       </div>
                     )}
                   </FormField>
                 </div>
-                <div className="md:col-span-2">
-                  <FormField label={t.address} id="address">
-                    <input
-                      type="text"
-                      id="address"
-                      className={`${inputClasses} ${
-                        errors.address ? "border-red-500" : ""
+              </div>
+              <div className="border-b border-gray-700 pb-6">
+                <h3 className="text-lg font-semibold text-gray-100 mb-4">
+                  {t.propertyDetails}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField label={t.propertyType} id="type">
+                    <select
+                      id="type"
+                      className={`${selectClasses} ${
+                        errors.type ? "border-red-500" : ""
                       }`}
                       required
-                      value={formData.address}
+                      value={formData.type}
                       onChange={handleChange}
-                    />
-                    {errors.address && (
-                      <div className="text-red-500 text-sm mt-1">
-                        {errors.address}
-                      </div>
-                    )}
-                  </FormField>
-                </div>
-                <div className="md:col-span-2">
-                  <FormField label={t.mapLocation} id="mapLocation">
-                    <input
-                      type="text"
-                      id="mapLocation"
-                      placeholder={t.mapLocationPlaceholder}
-                      className={`${inputClasses} ${
-                        errors.mapLocation ? "border-red-500" : ""
-                      }`}
-                      required
-                      value={formData.mapLocation}
-                      onChange={handleChange}
-                    />
-                    {errors.mapLocation && (
-                      <div className="text-red-500 text-sm mt-1">
-                        {errors.mapLocation}
-                      </div>
-                    )}
-                  </FormField>
-                </div>
-                <div className="md:col-span-2">
-                  <FormField label={t.keywords} id="keywords">
-                    <textarea
-                      id="keywords"
-                      rows={2}
-                      className={`${inputClasses} ${
-                        errors.keywords ? "border-red-500" : ""
-                      }`}
-                      placeholder={t.keywordsPlaceholder}
-                      required
-                      value={formData.keywords}
-                      onChange={handleChange}
-                    ></textarea>
-                    {errors.keywords && (
-                      <div className="text-red-500 text-sm mt-1">
-                        {errors.keywords}
-                      </div>
-                    )}
-                  </FormField>
-                </div>
-                <div className="md:col-span-2">
-                  <div className="flex justify-between items-center mb-2">
-                    <label
-                      htmlFor="description"
-                      className="block text-sm font-medium text-gray-300"
                     >
-                      {t.description}
-                    </label>
-                    {/* <button 
+                      <option value="">{t.selectType}</option>
+                      <option value="شقة">{t.apartment}</option>
+                      <option value="فيلا">{t.villa}</option>
+                      <option value="تجاري">{t.commercial}</option>
+                      <option value="ارض">{t.land}</option>
+                    </select>
+                    {errors.type && (
+                      <div className="text-red-500 text-sm mt-1">
+                        {errors.type}
+                      </div>
+                    )}
+                  </FormField>
+                  <FormField label={t.area} id="area">
+                    <input
+                      type="text"
+                      id="area"
+                      className={`${inputClasses} ${
+                        errors.area ? "border-red-500" : ""
+                      }`}
+                      required
+                      min="1"
+                      value={formData.area}
+                      onChange={handleChange}
+                    />
+                    {errors.area && (
+                      <div className="text-red-500 text-sm mt-1">
+                        {errors.area}
+                      </div>
+                    )}
+                  </FormField>
+                  {showBedroomAndBathFields && (
+                    <>
+                      <FormField label={t.bedrooms} id="bedrooms">
+                        <input
+                          type="text"
+                          id="bedrooms"
+                          className={`${inputClasses} ${
+                            errors.bedrooms ? "border-red-500" : ""
+                          }`}
+                          required
+                          min="0"
+                          value={formData.bedrooms}
+                          onChange={handleChange}
+                        />
+                        {errors.bedrooms && (
+                          <div className="text-red-500 text-sm mt-1">
+                            {errors.bedrooms}
+                          </div>
+                        )}
+                      </FormField>
+                      <FormField label={t.bathrooms} id="bathrooms">
+                        <input
+                          type="text"
+                          id="bathrooms"
+                          className={`${inputClasses} ${
+                            errors.bathrooms ? "border-red-500" : ""
+                          }`}
+                          required
+                          min="0"
+                          value={formData.bathrooms}
+                          onChange={handleChange}
+                        />
+                        {errors.bathrooms && (
+                          <div className="text-red-500 text-sm mt-1">
+                            {errors.bathrooms}
+                          </div>
+                        )}
+                      </FormField>
+                    </>
+                  )}
+                  {showFinishField && (
+                    <FormField label={t.finishing} id="finish">
+                      <select
+                        id="finish"
+                        className={`${selectClasses} ${
+                          errors.finish ? "border-red-500" : ""
+                        }`}
+                        required
+                        value={formData.finish || ""}
+                        onChange={handleChange}
+                      >
+                        <option value="">{t.selectFinish}</option>
+                        <option value="على الطوب">{t.basic}</option>
+                        <option value="نص تشطيب">{t.semi}</option>
+                        <option value="تشطيب كامل">{t.full}</option>
+                      </select>
+                      {errors.finish && (
+                        <div className="text-red-500 text-sm mt-1">
+                          {errors.finish}
+                        </div>
+                      )}
+                    </FormField>
+                  )}
+                  <FormField label={t.status} id="status">
+                    <select
+                      id="status"
+                      className={`${selectClasses} ${
+                        errors.status ? "border-red-500" : ""
+                      }`}
+                      required
+                      value={formData.status}
+                      onChange={handleChange}
+                    >
+                      <option value="">{t.selectStatus}</option>
+                      <option value="للبيع">{t.forSale}</option>
+                      <option value="للإيجار">{t.forRent}</option>
+                    </select>
+                    {errors.status && (
+                      <div className="text-red-500 text-sm mt-1">
+                        {errors.status}
+                      </div>
+                    )}
+                  </FormField>
+                  <div className="md:col-span-2">
+                    <FormField label={t.price} id="price">
+                      <input
+                        type="text"
+                        id="price"
+                        className={`${inputClasses} ${
+                          errors.price ? "border-red-500" : ""
+                        }`}
+                        required
+                        min="0"
+                        value={formData.price}
+                        onChange={handleChange}
+                      />
+                      {errors.price && (
+                        <div className="text-red-500 text-sm mt-1">
+                          {errors.price}
+                        </div>
+                      )}
+                    </FormField>
+                  </div>
+                  <div className="md:col-span-2">
+                    <FormField label={t.address} id="address">
+                      <input
+                        type="text"
+                        id="address"
+                        className={`${inputClasses} ${
+                          errors.address ? "border-red-500" : ""
+                        }`}
+                        required
+                        value={formData.address}
+                        onChange={handleChange}
+                      />
+                      {errors.address && (
+                        <div className="text-red-500 text-sm mt-1">
+                          {errors.address}
+                        </div>
+                      )}
+                    </FormField>
+                  </div>
+                  <div className="md:col-span-2">
+                    <FormField label={t.mapLocation} id="mapLocation">
+                      <input
+                        type="text"
+                        id="mapLocation"
+                        placeholder={t.mapLocationPlaceholder}
+                        className={`${inputClasses} ${
+                          errors.mapLocation ? "border-red-500" : ""
+                        }`}
+                        required
+                        value={formData.mapLocation}
+                        onChange={handleChange}
+                      />
+                      {errors.mapLocation && (
+                        <div className="text-red-500 text-sm mt-1">
+                          {errors.mapLocation}
+                        </div>
+                      )}
+                    </FormField>
+                  </div>
+                  <div className="md:col-span-2">
+                    <FormField label={t.keywords} id="keywords">
+                      <textarea
+                        id="keywords"
+                        rows={2}
+                        className={`${inputClasses} ${
+                          errors.keywords ? "border-red-500" : ""
+                        }`}
+                        placeholder={t.keywordsPlaceholder}
+                        required
+                        value={formData.keywords}
+                        onChange={handleChange}
+                      ></textarea>
+                      {errors.keywords && (
+                        <div className="text-red-500 text-sm mt-1">
+                          {errors.keywords}
+                        </div>
+                      )}
+                    </FormField>
+                  </div>
+                  <div className="md:col-span-2">
+                    <div className="flex justify-between items-center mb-2">
+                      <label
+                        htmlFor="description"
+                        className="block text-sm font-medium text-gray-300"
+                      >
+                        {t.description}
+                      </label>
+                      {/* <button 
                                   type="button" 
                                   onClick={handleGenerateDescription} 
                                   disabled={isGenerating} 
@@ -707,77 +717,86 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                                 >
                                     {isGenerating ? t.generating : t.generateWithAI} ✨
                                 </button> */}
-                  </div>
-                  <textarea
-                    id="description"
-                    rows={5}
-                    className={`${inputClasses} ${
-                      errors.description ? "border-red-500" : ""
-                    }`}
-                    required
-                    value={formData.description}
-                    onChange={handleChange}
-                  ></textarea>
-                  {errors.description && (
-                    <div className="text-red-500 text-sm mt-1">
-                      {errors.description}
                     </div>
-                  )}
+                    <textarea
+                      id="description"
+                      rows={5}
+                      className={`${inputClasses} ${
+                        errors.description ? "border-red-500" : ""
+                      }`}
+                      required
+                      value={formData.description}
+                      onChange={handleChange}
+                    ></textarea>
+                    {errors.description && (
+                      <div className="text-red-500 text-sm mt-1">
+                        {errors.description}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div id="propertyImages">
-              <h3 className="text-lg font-semibold text-gray-100 mb-4">
-                {t.imagesAndPlan}
-              </h3>
-              <div className="space-y-4">
-                <FormField label={t.uploadImages} id="propertyImages">
-                  <ImageUploader
-                    images={images}
-                    onImagesChange={setImages}
-                    minImages={3}
-                    maxImages={20}
-                    language={language}
-                    onUploadComplete={handleUploadComplete}
-                  />
-                  {errors.images && (
-                    <div className="text-red-500 text-sm mt-1">
-                      {errors.images}
+              <div id="propertyImages">
+                <h3 className="text-lg font-semibold text-gray-100 mb-4">
+                  {t.imagesAndPlan}
+                </h3>
+                <div className="space-y-4">
+                  <FormField label={t.uploadImages} id="propertyImages">
+                    <div className="relative">
+                      {isSubmitting && (
+                        <div className="absolute inset-0 z-10 bg-transparent cursor-wait" />
+                      )}
+                      <ImageUploader
+                        images={images}
+                        onImagesChange={(newImages) => {
+                          if (isSubmitting) return;
+                          setImages(newImages);
+                        }}
+                        minImages={3}
+                        maxImages={20}
+                        language={language}
+                        onUploadComplete={handleUploadComplete}
+                      />
                     </div>
-                  )}
-                </FormField>
-                <FormField label={t.listingPlan} id="listingPlan">
-                  <select
-                    id="listingPlan"
-                    className={`${selectClasses} ${
-                      errors.listingPlan ? "border-red-500" : ""
-                    }`}
-                    required
-                    value={formData.listingPlan}
-                    onChange={handleChange}
-                  >
-                    <option value="">{t.selectPlan}</option>
-                    <option value="paid">{t.paidListing}</option>
-                    <option value="commission">{t.commissionListing}</option>
-                  </select>
-                  {errors.listingPlan && (
-                    <div className="text-red-500 text-sm mt-1">
-                      {errors.listingPlan}
-                    </div>
-                  )}
-                </FormField>
+                    {errors.images && (
+                      <div className="text-red-500 text-sm mt-1">
+                        {errors.images}
+                      </div>
+                    )}
+                  </FormField>
+                  <FormField label={t.listingPlan} id="listingPlan">
+                    <select
+                      id="listingPlan"
+                      className={`${selectClasses} ${
+                        errors.listingPlan ? "border-red-500" : ""
+                      }`}
+                      required
+                      value={formData.listingPlan}
+                      onChange={handleChange}
+                    >
+                      <option value="">{t.selectPlan}</option>
+                      <option value="paid">{t.paidListing}</option>
+                      <option value="commission">{t.commissionListing}</option>
+                    </select>
+                    {errors.listingPlan && (
+                      <div className="text-red-500 text-sm mt-1">
+                        {errors.listingPlan}
+                      </div>
+                    )}
+                  </FormField>
+                </div>
               </div>
-            </div>
-            <div className="pt-6 flex justify-end">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="bg-amber-500 text-gray-900 font-bold px-8 py-3 rounded-lg hover:bg-amber-600 transition-colors duration-200 disabled:opacity-50"
-              >
-                {isSubmitting ? t.submitting : t.submit}
-              </button>
-            </div>
+              <div className="pt-6 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-amber-500 text-gray-900 font-bold px-8 py-3 rounded-lg hover:bg-amber-600 transition-colors duration-200 disabled:opacity-50"
+                >
+                  {isSubmitting ? t.submitting : t.submit}
+                </button>
+              </div>
+            </fieldset>
           </form>
         </div>
       </div>

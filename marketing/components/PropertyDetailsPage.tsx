@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getProperty } from "../services/propertyService";
-import type { Property } from "../data/properties";
 import {
   BedIcon,
   BathIcon,
@@ -14,6 +13,7 @@ import type { Language } from "../App";
 import { translations } from "../data/translations";
 import { useFavorites } from "./shared/FavoritesContext";
 import { Loader2, Settings } from "lucide-react";
+import { Property } from "@/types";
 
 interface PropertyDetailsPageProps {
   language: Language;
@@ -48,11 +48,11 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
   }, [propertyId]);
 
   const { isFavorite, toggleFavorite } = useFavorites();
-  const isFav = property ? isFavorite(property.id) : false;
+  const isFav = property ? isFavorite(property?.id?.toString()) : false;
 
   const handleFavoriteClick = () => {
     if (property) {
-      toggleFavorite(property.id);
+      toggleFavorite(property?.id?.toString());
     }
   };
 
@@ -117,7 +117,7 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
   }
 
   const isForSale =
-    property.status === "For Sale" || property.status === "للبيع"; // تم التعديل هنا
+    (property as any).status === "For Sale" || property.status === "للبيع"; // تم التعديل هنا
 
   return (
     <div className="bg-gray-900 text-white py-12">
@@ -178,7 +178,8 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
                     isForSale ? "bg-green-600" : "bg-sky-600"
                   }`}
                 >
-                  {property.status === "For Sale" || property.status === "للبيع"
+                  {(property as any).status === "For Sale" ||
+                  property.status === "للبيع"
                     ? language === "ar"
                       ? "للبيع"
                       : "For Sale"
@@ -214,26 +215,28 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
                 {t.propertyDetailsPage?.description}
               </h2>
               <p className="text-gray-300 leading-relaxed whitespace-pre-line">
-                {property.description || t.propertyDetailsPage?.noDescription}
+                {property.description ||
+                  (t.propertyDetailsPage as any)?.noDescription}
               </p>{" "}
               {/* تم التعديل هنا */}
             </div>
 
-            {property.amenities && property.amenities.length > 0 && (
-              <div className="bg-gray-800 p-8 rounded-lg border border-gray-700 mb-8">
-                <h2 className="text-2xl font-bold text-amber-500 mb-6">
-                  {t.propertyDetailsPage?.amenities}
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {property.amenities.map((amenity) => (
-                    <div key={amenity} className="flex items-center gap-3">
-                      <CheckCircleIcon className="w-6 h-6 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-300">{amenity}</span>
-                    </div>
-                  ))}
+            {(property as any).amenities &&
+              (property as any).amenities.length > 0 && (
+                <div className="bg-gray-800 p-8 rounded-lg border border-gray-700 mb-8">
+                  <h2 className="text-2xl font-bold text-amber-500 mb-6">
+                    {t.propertyDetailsPage?.amenities}
+                  </h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {(property as any).amenities.map((amenity) => (
+                      <div key={amenity} className="flex items-center gap-3">
+                        <CheckCircleIcon className="w-6 h-6 text-green-500 flex-shrink-0" />
+                        <span className="text-gray-300">{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Map */}
             <div className="bg-gray-800 p-8 rounded-lg border border-gray-700">
@@ -280,8 +283,8 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
                 </div>
 
                 {isForSale &&
-                  (property.type === "apartment" ||
-                    property.type === "villa" ||
+                  ((property as any).type === "apartment" ||
+                    (property as any).type === "villa" ||
                     property.type === "شقة" ||
                     property.type === "فيلا") &&
                   property.finish && (
@@ -290,7 +293,7 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
 
                       <span className="font-bold">{property.finish}</span>
                       <span>
-                        {t.propertyDetailsPage?.finishing ||
+                        {(t.propertyDetailsPage as any)?.finishing ||
                           (language === "ar" ? "التشطيب" : "Finishing")}
                       </span>
                     </div>

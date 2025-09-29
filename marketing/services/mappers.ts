@@ -24,31 +24,6 @@ import type {
   ApiImage,
 } from "../types";
 
-// ===== AdminUser =====
-const ROLE_MAP: Record<number, UserRole> = {
-  1: "مدير عام",
-  2: "مندوب مبيعات",
-  3: "محرر محتوى",
-  4: "مسؤل مبيعات العقارات",
-  5: "مسؤل مبيعات التشطيبات",
-  6: "مسؤل مبيعات الديكورات والتحف",
-  7: "منسق",
-};
-
-export function mapApiUserToAdminUser(apiUser: any): AdminUser {
-  const roleId = apiUser.role_id ?? 7; // 7 = "منسق" افتراضي
-  return {
-    id: apiUser.id,
-    name: apiUser.name,
-    email: apiUser.email,
-    roleId,
-    role: ROLE_MAP[roleId] || "منسق",
-    lastLogin: apiUser.last_login_at
-      ? new Date(apiUser.last_login_at).toLocaleString()
-      : "",
-  };
-}
-
 // ===== Property =====
 export function mapApiPropertyToProperty(apiProp: any): Property {
   // دالة مساعدة للتعامل مع القيم الرقمية
@@ -109,40 +84,6 @@ export function mapApiInquiryToInquiry(apiInq: any): Inquiry {
   };
 }
 
-// ===== PropertyRequest =====
-export function mapApiPropertyRequestToPropertyRequest(
-  apiReq: any
-): PropertyRequest {
-  return {
-    id: apiReq.id,
-    requesterName: apiReq.name || apiReq.requesterName,
-    requesterPhone: apiReq.phone || apiReq.requesterPhone || "",
-    requestDate: apiReq.requested_at || "",
-    title: apiReq.title_ar || apiReq.title_en || apiReq.title || "",
-    address: apiReq.address || "",
-    area: apiReq.area ? parseFloat(apiReq.area) : 0,
-    bedrooms: apiReq.bedrooms ? parseInt(apiReq.bedrooms) : 0,
-    bathrooms: apiReq.bathrooms ? parseInt(apiReq.bathrooms) : 0,
-    price: apiReq.price || "",
-    status: (apiReq.status as PropertyStatus) || "للبيع",
-    type: (apiReq.type as PropertyType) || "شقة",
-    finish: (apiReq.finish as PropertyFinish) || undefined,
-    description: apiReq.desc_ar || apiReq.desc_en || apiReq.description || "",
-    keywords: apiReq.keywords || "",
-    imageUrl: apiReq.images?.[0]?.url || "",
-    thumbnailUrl: apiReq.images?.[0]?.thumbnail_url || "",
-    mediumUrl: apiReq.images?.[0]?.medium_url || "",
-    // كل الصور بالخصائص المطلوبة
-    gallery: apiReq.images?.map(mapApiImageToImageItem) || [],
-    listingEndDate: apiReq.listing_end_date,
-    latitude: apiReq.lat ? parseFloat(apiReq.lat) : undefined,
-    longitude: apiReq.lng ? parseFloat(apiReq.lng) : undefined,
-    googleMapsUrl: apiReq.google_maps_url || "",
-    listingPlane: apiReq.listing_plan || "",
-    isListed: apiReq.is_listed,
-  };
-}
-
 // ===== FinishingRequest =====
 export function mapApiFinishingRequestToFinishingRequest(
   apiReq: any
@@ -160,7 +101,6 @@ export function mapApiFinishingRequestToFinishingRequest(
 }
 
 // ===== DecorationRequest =====
-
 export const mapApiDecorationRequestToDecorationRequest = (
   apiRequest: any
 ): DecorationRequest => {
@@ -208,16 +148,6 @@ export function mapApiPortfolioItemToPortfolioItem(
 }
 
 // ===== Client =====
-export function mapApiClientToClient(apiClient: any): Client {
-  return {
-    id: apiClient.id,
-    name: apiClient.name,
-    phone: apiClient.phone,
-    email: apiClient.email,
-    firstContact: apiClient.first_contact || apiClient.created_at || "",
-    notes: apiClient.notes || "",
-  };
-}
 export function mapApiSiteContentToSiteContent(apiData: any): SiteContent {
   return {
     heroTitle: apiData.heroTitle || "",
@@ -282,21 +212,4 @@ export const mapApiImageToImageItem = (img: ApiImage): ImageItem => ({
   isExisting: true,
   originalId: img.id,
   filename: img.url?.split("/").pop() || `image-${img.id}.jpg`,
-});
-
-// UI -> Backend
-export const mapImageItemToApiImage = (img: ImageItem): ApiImage => ({
-  id: img.originalId || 0,
-  url: img.serverUrl || img.previewUrl || "",
-  thumbnail_url: img.thumbnailUrl || "",
-  medium_url: img.mediumUrl || "",
-  alt_text: img.altText || "",
-  caption: img.caption || "",
-  isfeatured: img.isFeatured ? 1 : 0,
-  sort: img.sort || 0,
-  file_size: img.fileSize || 0,
-  dimensions: img.dimensions || { width: 0, height: 0 },
-  original_filename: img.originalFilename || "",
-  mime_type: img.mimeType || "",
-  seo_keywords: img.seoKeywords || "",
 });
