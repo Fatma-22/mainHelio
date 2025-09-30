@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import type { Language } from "../App";
 import { translations } from "../data/translations";
-import FormField, { inputClasses } from "./shared/FormField";
+import { inputClasses } from "./shared/FormField";
 import { createDecorRequest } from "../services/decorationRequestsService";
 import ImageUploader from "./ImageUploader"; // استيراد ImageUploader
 import { ImageItem, PortfolioItem } from "../types";
@@ -130,7 +130,6 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setter(e.target.value);
 
-      // مسح رسالة الخطأ عند بدء الكتابة
       if (errors[fieldName]) {
         setErrors((prev) => ({
           ...prev,
@@ -221,7 +220,7 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
 
     try {
       // الحصول على الصورة المميزة إذا وجدت
-      const featuredImage = images.find((img) => img.isFeatured);
+      const featuredImage = images?.[0];
 
       // تجهيز بيانات الطلب
       const requestData = {
@@ -230,22 +229,18 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
         type: typeMapping[serviceType] || serviceType,
         details: description + (dimensions ? ` | الأبعاد: ${dimensions}` : ""),
         reference_item_id: requestType === "similar" ? item?.id : null,
-        image: featuredImage?.file,
-        altText: featuredImage?.altText ?? item?.altText ?? "null",
-        caption: featuredImage?.caption ?? item?.caption ?? "null",
-      };
 
-      // إرسال الطلب
+        image: featuredImage?.file ?? null,
+        altText: featuredImage?.altText ?? null,
+        caption: featuredImage?.caption ?? null,
+      };
       await createDecorRequest(requestData);
 
-      // إعادة تعيين النموذج
       setFullName("");
       setPhone("");
       setDimensions("");
       setDescription("");
-      setImages([]); // إعادة تعيين الصور
-
-      // عرض تنبيه النجاح بدلاً من الإغلاق المباشر
+      setImages([]);
       showSuccessAlert(
         translations[language].success.requestSent ||
           (language === "ar"
@@ -253,7 +248,6 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
             : "Your request has been sent successfully!")
       );
 
-      // إغلاق النموذج بعد عرض التنبيه
       setTimeout(() => {
         onClose();
       }, 1500);
@@ -261,8 +255,8 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
       console.error(err);
       // عرض تنبيه الخطأ بدلاً من عرض الخطأ في النموذج
       showErrorAlert(
-        (translations[language].errors as any).operations
-          .decorationRequestFailed ||
+        (translations[language].errors as any)?.operations
+          ?.decorationRequestFailed ||
           (language === "ar"
             ? "حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى."
             : "An error occurred while submitting the request. Please try again.")
@@ -426,7 +420,7 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
               )}
             </div>
 
-            {/* استبدال حقل رفع الصورة بـ ImageUploader */}
+            {/* حقل رفع الصورة للطلبات المخصصة فقط */}
             {!isSimilarRequest && (
               <div>
                 <label className="block text-gray-300 mb-2">
@@ -440,7 +434,7 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
                   images={images}
                   onImagesChange={handleImagesChange}
                   minImages={1}
-                  maxImages={3}
+                  maxImages={1}
                   language={language}
                   hideUploadActions={true} // إخفاء أزرار الرفع المباشرة
                 />
@@ -448,6 +442,36 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
                 {errors.images && (
                   <p className="mt-1 text-red-500 text-sm">{errors.images}</p>
                 )}
+              </div>
+            )}
+
+            {/* معلومات إضافية للطلبات المشابهة */}
+            {isSimilarRequest && (
+              <div className="p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-blue-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <span className="text-blue-400 font-medium">
+                    {language === "ar" ? "طلب مشابه" : "Similar Request"}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-300">
+                  {language === "ar"
+                    ? "سيتم استخدام صورة العنصر المرجعي كمرجع للطلب. يمكنك إضافة تفاصيل إضافية في الوصف."
+                    : "The reference item's image will be used as a reference for the request. You can add additional details in the description."}
+                </p>
               </div>
             )}
 

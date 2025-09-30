@@ -1,13 +1,23 @@
-import React from 'react';
+import React from "react";
 
-export type Page = 'لوحة التحكم' | 'إدارة العقارات' | 'إدارة الاستفسارات' | 'إدارة العملاء' | 'إدارة المستخدمين' | 'إدارة المحتوى' | 'طلبات إضافة العقارات' | 'إدارة التشطيبات' | 'إدارة الديكورات' | 'إدارة معرض الأعمال';
-export type PropertyFinish = 'full' | 'partial' | 'bare'; // تشطيب كامل / نص تشطيب / على الطوب
+export type Page =
+  | "لوحة التحكم"
+  | "إدارة العقارات"
+  | "إدارة الاستفسارات"
+  | "إدارة العملاء"
+  | "إدارة المستخدمين"
+  | "إدارة المحتوى"
+  | "طلبات إضافة العقارات"
+  | "إدارة التشطيبات"
+  | "إدارة الديكورات"
+  | "إدارة معرض الأعمال";
+export type PropertyFinish = "full" | "partial" | "bare"; // تشطيب كامل / نص تشطيب / على الطوب
 
 export interface StatCardData {
   title: string;
   value: string;
   change?: string;
-  changeType?: 'increase' | 'decrease';
+  changeType?: "increase" | "decrease";
   icon: React.ReactNode;
   pageLink?: Page;
 }
@@ -36,9 +46,8 @@ export interface ApiImage {
   seo_keywords?: string;
 }
 
-
-export type PropertyStatus = 'للبيع' | 'للإيجار' | 'مباع' | 'مؤجر';
-export type PropertyType = 'شقة' | 'فيلا' | 'أرض' | 'تجاري';
+export type PropertyStatus = "للبيع" | "للإيجار" | "مباع" | "مؤجر";
+export type PropertyType = "شقة" | "فيلا" | "أرض" | "تجاري";
 
 export interface Property {
   id: number;
@@ -68,8 +77,8 @@ export interface Property {
   altText?: string;
 }
 
-export type InquiryStatus = 'جديد' | 'تم التواصل' | 'قيد المتابعة' | 'مغلق';
-export type InquiryType = 'تواصل عام' | 'طلب ديكور' | 'إضافة عقار';
+export type InquiryStatus = "جديد" | "تم التواصل" | "قيد المتابعة" | "مغلق";
+export type InquiryType = "تواصل عام" | "طلب ديكور" | "إضافة عقار";
 
 export interface Inquiry {
   id: number;
@@ -83,19 +92,24 @@ export interface Inquiry {
   notes?: string;
 }
 
-export type UserRole = 'مدير عام' | 'مندوب مبيعات' | 'محرر محتوى' | 'مسؤل مبيعات العقارات' | 'مسؤل مبيعات التشطيبات' | 'مسؤل مبيعات الديكورات والتحف' | 'منسق';
+export type UserRole =
+  | "مدير عام"
+  | "مندوب مبيعات"
+  | "محرر محتوى"
+  | "مسؤل مبيعات العقارات"
+  | "مسؤل مبيعات التشطيبات"
+  | "مسؤل مبيعات الديكورات والتحف"
+  | "منسق";
 
 export interface AdminUser {
-    id: number;
-    name: string;
-    email: string;
-    roleId: number;
-    role:UserRole;
-    lastLogin: string;
-    password?: string;
+  id: number;
+  name: string;
+  email: string;
+  roleId: number;
+  role: UserRole;
+  lastLogin: string;
+  password?: string;
 }
-
-
 
 export interface PropertyRequest {
   id: number;
@@ -127,23 +141,39 @@ export interface PropertyRequest {
   altText?: string;
 }
 
-
-export type FinishingRequestStatus = 'جديد' | 'تم التواصل' | 'قيد التنفيذ' | 'مكتمل' | 'ملغي';
-export type FinishingRequestType = 'استشارة وتصور' | 'تصميم ثلاثي الأبعاد' | 'تنفيذ وإشراف';
+export type FinishingRequestStatus =
+  | "جديد"
+  | "تم التواصل"
+  | "قيد التنفيذ"
+  | "مكتمل"
+  | "ملغي";
+export type FinishingRequestType =
+  | "استشارة وتصور"
+  | "تصميم ثلاثي الأبعاد"
+  | "تنفيذ وإشراف";
 
 export interface FinishingRequest {
-    id: number;
-    clientName: string;
-    clientPhone: string;
-    requestDate: string;
-    type: FinishingRequestType;
-    status: FinishingRequestStatus;
-    details: string;
-    notes?: string;
+  id: number;
+  clientName: string;
+  clientPhone: string;
+  requestDate: string;
+  type: FinishingRequestType;
+  status: FinishingRequestStatus;
+  details: string;
+  notes?: string;
 }
 
-export type DecorationRequestStatus = 'جديد' | 'تم التواصل' | 'قيد التنفيذ' | 'مكتمل' | 'ملغي';
-export type DecorationRequestType = 'لوحات كانفس' | 'تحف ديكورية' | 'منحوتات جدارية' | 'تشطيبات';
+export type DecorationRequestStatus =
+  | "جديد"
+  | "تم التواصل"
+  | "قيد التنفيذ"
+  | "مكتمل"
+  | "ملغي";
+export type DecorationRequestType =
+  | "لوحات كانفس"
+  | "تحف ديكورية"
+  | "منحوتات جدارية"
+  | "تشطيبات";
 
 export interface PortfolioItem {
   id: number;
@@ -156,7 +186,6 @@ export interface PortfolioItem {
   altText?: string;
   caption?: string;
 }
-
 
 export interface DecorationRequest {
   id: number;
@@ -176,65 +205,61 @@ export interface DecorationRequest {
   caption?: string;
 }
 
-
-
 // Types for Content Management
 export interface Testimonial {
-    id: number;
-    name: string;
-    quote: string;
-    designation: string;
-    imageUrl: string;
-    
+  id: number;
+  name: string;
+  quote: string;
+  designation: string;
+  imageUrl: string;
 }
 
 export interface ServiceItem {
-    id: number;
-    title: string;
-    description: string;
-    iconUrl: string; 
-    link: string;
+  id: number;
+  title: string;
+  description: string;
+  iconUrl: string;
+  link: string;
 }
-
 
 export interface Client {
-    id: number;
-    name: string;
-    phone: string;
-    email?: string;
-    firstContact: string; // ISO date string
-    notes?: string;
+  id: number;
+  name: string;
+  phone: string;
+  email?: string;
+  firstContact: string; // ISO date string
+  notes?: string;
 }
 export interface AboutPoint {
-  id:string;
+  id: string;
   description: string;
 }
 export interface SiteContent {
-    heroTitle: string;
-    aboutTitle: string;
-    aboutSubtitle: string;
-    aboutPoints: AboutPoint[];
-    servicesTitle: string;
-    services: ServiceItem[];
-    testimonialsTitle: string;
-    testimonials: Testimonial[];
-    contactTitle: string;
-    contactSubtitle: string;
-    contactPhone: string;
-    contactEmail: string;
-    contactAddress: string;
-    workingHours: string;
-    socialLinks: {
-        facebook: string;
-        twitter: string;
-        instagram: string;
-        linkedin: string;
-        youtube: string;
-    };
-    heroSubtitle: string;
+  heroTitle: string;
+  aboutTitle: string;
+  aboutSubtitle: string;
+  aboutPoints: AboutPoint[];
+  servicesTitle: string;
+  services: ServiceItem[];
+  testimonialsTitle: string;
+  testimonials: Testimonial[];
+  contactTitle: string;
+  contactSubtitle: string;
+  contactPhone: string;
+  contactEmail: string;
+  contactAddress: string;
+  workingHours: string;
+  socialLinks: {
+    facebook: string;
+    twitter: string;
+    instagram: string;
+    linkedin: string;
+    youtube: string;
+  };
+  heroSubtitle: string;
 }
 
-export type ToastType = 'success' | 'error';
+export type ToastType = "success" | "error";
 export interface ToastState {
   message: string;
   type: ToastType;
@@ -281,5 +306,5 @@ export interface ImageItem {
   isExisting?: boolean;
   originalId?: number;
   filename?: string;
-  isDeleted?:boolean;
+  isDeleted?: boolean;
 }

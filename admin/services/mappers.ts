@@ -17,23 +17,22 @@ import type {
   FinishingRequestType,
   DecorationRequestStatus,
   DecorationRequestType,
-  SiteContent, 
-  ServiceItem, 
+  SiteContent,
+  ServiceItem,
   Testimonial,
   ImageItem,
-  ApiImage
-
+  ApiImage,
 } from "../types";
 
 // ===== AdminUser =====
 const ROLE_MAP: Record<number, UserRole> = {
-  1: 'مدير عام',
-  2: 'مندوب مبيعات',
-  3: 'محرر محتوى',
-  4: 'مسؤل مبيعات العقارات',
-  5: 'مسؤل مبيعات التشطيبات',
-  6: 'مسؤل مبيعات الديكورات والتحف',
-  7: 'منسق',
+  1: "مدير عام",
+  2: "مندوب مبيعات",
+  3: "محرر محتوى",
+  4: "مسؤل مبيعات العقارات",
+  5: "مسؤل مبيعات التشطيبات",
+  6: "مسؤل مبيعات الديكورات والتحف",
+  7: "منسق",
 };
 
 export function mapApiUserToAdminUser(apiUser: any): AdminUser {
@@ -44,23 +43,25 @@ export function mapApiUserToAdminUser(apiUser: any): AdminUser {
     email: apiUser.email,
     roleId,
     role: ROLE_MAP[roleId] || "منسق",
-    lastLogin: apiUser.last_login_at ? new Date(apiUser.last_login_at).toLocaleString() : "",
+    lastLogin: apiUser.last_login_at
+      ? new Date(apiUser.last_login_at).toLocaleString()
+      : "",
   };
 }
-
 
 // ===== Property =====
 export function mapApiPropertyToProperty(apiProp: any): Property {
   // دالة مساعدة للتعامل مع القيم الرقمية
   const parseNumber = (value: any, defaultValue: number = 0): number => {
-    if (value === null || value === undefined || value === '') return defaultValue;
+    if (value === null || value === undefined || value === "")
+      return defaultValue;
     const num = Number(value);
     return isNaN(num) ? defaultValue : num;
   };
 
   // دالة مساعدة للتعامل مع القيم المنطقية
   const parseBoolean = (value: any): boolean => {
-    return value === 1 || value === '1' || value === true || value === 'true';
+    return value === 1 || value === "1" || value === true || value === "true";
   };
 
   return {
@@ -107,7 +108,9 @@ export function mapApiInquiryToInquiry(apiInq: any): Inquiry {
 }
 
 // ===== PropertyRequest =====
-export function mapApiPropertyRequestToPropertyRequest(apiReq: any): PropertyRequest {
+export function mapApiPropertyRequestToPropertyRequest(
+  apiReq: any
+): PropertyRequest {
   return {
     id: apiReq.id,
     requesterName: apiReq.name || apiReq.requesterName,
@@ -134,13 +137,14 @@ export function mapApiPropertyRequestToPropertyRequest(apiReq: any): PropertyReq
     longitude: apiReq.lng ? parseFloat(apiReq.lng) : undefined,
     googleMapsUrl: apiReq.google_maps_url || "",
     listingPlane: apiReq.listing_plan || "",
-    isListed: apiReq.is_listed
+    isListed: apiReq.is_listed,
   };
 }
 
-
 // ===== FinishingRequest =====
-export function mapApiFinishingRequestToFinishingRequest(apiReq: any): FinishingRequest {
+export function mapApiFinishingRequestToFinishingRequest(
+  apiReq: any
+): FinishingRequest {
   return {
     id: apiReq.id,
     clientName: apiReq.name || apiReq.customer_name || "",
@@ -155,50 +159,48 @@ export function mapApiFinishingRequestToFinishingRequest(apiReq: any): Finishing
 
 // ===== DecorationRequest =====
 
-export const mapApiDecorationRequestToDecorationRequest = (apiRequest: any): DecorationRequest => {
+export const mapApiDecorationRequestToDecorationRequest = (
+  apiRequest: any
+): DecorationRequest => {
   return {
-    id: apiRequest.id,
+    ...apiRequest,
     clientName: apiRequest.name, // من حقل name في العميل
     clientPhone: apiRequest.phone, // من حقل phone في العميل
-    type: apiRequest.type,
-    details: apiRequest.details,
-    status: apiRequest.status,
-    notes: apiRequest.notes,
-    image: apiRequest.full_image_url, // استخدام full_image_url من الباك إند
-    thumbnailUrl: apiRequest.full_thumbnail_url,
-    mediumUrl: apiRequest.full_medium_url,
+
+    image: apiRequest?.image ?? apiRequest.full_image_url, // استخدام full_image_url من الباك إند
+    thumbnailUrl: apiRequest?.thumbnail_url ?? apiRequest.full_thumbnail_url,
+    mediumUrl: apiRequest?.medium_url ?? apiRequest.full_medium_url,
     altText: apiRequest.alt_text,
-    caption: apiRequest.caption,
     requestDate: apiRequest.created_at, // استخدام created_at من الباك إند
-    reference_item_id: apiRequest.reference_item_id,
-    coverUrl: apiRequest.cover_url, // استخدام cover_url من الباك إند
   };
 };
 
 // ===== PortfolioItem =====
 
-export function mapApiPortfolioItemToPortfolioItem(apiItem: any): PortfolioItem {
+export function mapApiPortfolioItemToPortfolioItem(
+  apiItem: any
+): PortfolioItem {
   return {
     id: apiItem.id,
-    title: apiItem.title_ar?.trim() || apiItem.title_en?.trim() || apiItem.title?.trim() || "",
+    title:
+      apiItem.title_ar?.trim() ||
+      apiItem.title_en?.trim() ||
+      apiItem.title?.trim() ||
+      "",
     type: (apiItem.type as DecorationRequestType) || "لوحات كانفس",
-    description: apiItem.description_ar?.trim() || apiItem.description_en?.trim() || "",
-   imageUrl: apiItem.cover_url
-  ? apiItem.cover_url.replace(/\\/g, "")
-  : apiItem.images_json?.[0] || "",
-thumbnailUrl: apiItem.thumbnail_url
-  ? apiItem.thumbnail_url.replace(/\\/g, "")
-  : "",
-mediumUrl: apiItem.medium_url
-  ? apiItem.medium_url.replace(/\\/g, "")
-  : "",
+    description:
+      apiItem.description_ar?.trim() || apiItem.description_en?.trim() || "",
+    imageUrl: apiItem.cover_url
+      ? apiItem.cover_url.replace(/\\/g, "")
+      : apiItem.images_json?.[0] || "",
+    thumbnailUrl: apiItem.thumbnail_url
+      ? apiItem.thumbnail_url.replace(/\\/g, "")
+      : "",
+    mediumUrl: apiItem.medium_url ? apiItem.medium_url.replace(/\\/g, "") : "",
     altText: apiItem.altText || "",
     caption: apiItem.caption || "",
   };
-  
 }
-
-
 
 // ===== Client =====
 export function mapApiClientToClient(apiClient: any): Client {
@@ -219,14 +221,14 @@ export function mapApiSiteContentToSiteContent(apiData: any): SiteContent {
     aboutSubtitle: apiData.aboutSubtitle || "",
     aboutPoints: (apiData.aboutPoints || []).map((p: any) => ({
       id: p.id || Date.now() + Math.random(), // id افتراضي
-      description: p.description || ''
+      description: p.description || "",
     })),
     servicesTitle: apiData.servicesTitle || "",
     services: (apiData.services || []).map((s: any) => ({
       id: s.id || Date.now(),
       title: s.title || "",
       description: s.description || "",
-      iconUrl: s.iconUrl || ""
+      iconUrl: s.iconUrl || "",
     })),
     testimonialsTitle: apiData.testimonialsTitle || "",
     testimonials: (apiData.testimonials || []).map((t: any) => ({
@@ -234,7 +236,7 @@ export function mapApiSiteContentToSiteContent(apiData: any): SiteContent {
       name: t.name || "",
       designation: t.designation || "",
       quote: t.quote || "",
-      imageUrl: t.imageUrl || ""
+      imageUrl: t.imageUrl || "",
     })),
     contactTitle: apiData.contactTitle || "",
     contactSubtitle: apiData.contactSubtitle || "",
@@ -251,7 +253,6 @@ export function mapApiSiteContentToSiteContent(apiData: any): SiteContent {
     },
   };
 }
-
 
 // Backend -> UI
 export const mapApiImageToImageItem = (img: ApiImage): ImageItem => ({
@@ -275,7 +276,7 @@ export const mapApiImageToImageItem = (img: ApiImage): ImageItem => ({
   seoKeywords: img.seo_keywords || "",
   isExisting: true,
   originalId: img.id,
-  filename: img.url?.split('/').pop() || `image-${img.id}.jpg`
+  filename: img.url?.split("/").pop() || `image-${img.id}.jpg`,
 });
 
 // UI -> Backend
@@ -292,5 +293,5 @@ export const mapImageItemToApiImage = (img: ImageItem): ApiImage => ({
   dimensions: img.dimensions || { width: 0, height: 0 },
   original_filename: img.originalFilename || "",
   mime_type: img.mimeType || "",
-  seo_keywords: img.seoKeywords || ""
+  seo_keywords: img.seoKeywords || "",
 });

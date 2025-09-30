@@ -34,6 +34,23 @@ class DecorRequestController extends Controller
         $requests = DecorRequest::all();
         $data = $requests->map(function ($req) {
             $customer = Customer::find($req->requested_by);
+                
+            $image = null;
+            $thumbnail_url = null;
+            $medium_url = null;
+            $alt_text = null;
+            $caption = null; 
+
+            if ($req->reference_item_id) {
+                $referenceItem = $req->referenceItem;
+                if ($referenceItem) { 
+                    $image =  $referenceItem->cover_url;
+                    $thumbnail_url =  $referenceItem->thumbnail_url;
+                    $medium_url =  $referenceItem->medium_url;
+                    $alt_text =  $referenceItem->altText;
+                    $caption =  $referenceItem->caption; 
+                }
+            }
             return [
                 'id' => $req->id,
                 'title' => $req->title,
@@ -42,16 +59,18 @@ class DecorRequestController extends Controller
                 'type' => $req->type,
                 'details' => $req->details,
                 'notes' => $req->notes,
-                'image' => $req->full_image_url,
-                'thumbnail_url' => $req->full_thumbnail_url,
-                'medium_url' => $req->full_medium_url,
-                'alt_text' => $req->alt_text,
-                'caption' => $req->caption,
+                'image' => $image ?? $req->full_image_url,
+                'thumbnail_url' => $thumbnail_url ?? $req->full_thumbnail_url,
+                'medium_url' => $medium_url ?? $req->full_medium_url,
+                'alt_text' => $alt_text ?? $req->alt_text,
+                'caption' =>$caption ??  $req->caption,
+
                 'created_at' => $req->created_at->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
                 'updated_at' => $req->updated_at->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
                 'name' => $customer?->name ?? '',
                 'email' => $customer?->email ?? '',
                 'phone' => $customer?->phone ?? '',
+                'reference_item_id' => $req->reference_item_id, 
             ];
         });
     
@@ -80,15 +99,24 @@ class DecorRequestController extends Controller
             }
         }
         
-        // جلب بيانات reference_item إذا كان موجوداً
-        $coverUrl = null;
+        
+        $image = null;
+        $thumbnail_url = null;
+        $medium_url = null;
+        $alt_text = null;
+        $caption = null; 
+
         if ($requestModel->reference_item_id) {
             $referenceItem = $requestModel->referenceItem;
-            if ($referenceItem) {
-                $coverUrl = $referenceItem->full_cover_url;
+            if ($referenceItem) { 
+                $image =  $referenceItem->cover_url;
+                $thumbnail_url =  $referenceItem->thumbnail_url;
+                $medium_url =  $referenceItem->medium_url;
+                $alt_text =  $referenceItem->altText;
+                $caption =  $referenceItem->caption; 
             }
         }
-    
+        
         return response()->json([
             'id' => $requestModel->id,
             'title' => $requestModel->title,
@@ -97,40 +125,58 @@ class DecorRequestController extends Controller
             'type' => $requestModel->type,
             'details' => $requestModel->details,
             'notes' => $requestModel->notes,
-            'image' => $requestModel->full_image_url,
-            'thumbnail_url' => $requestModel->full_thumbnail_url,
-            'medium_url' => $requestModel->full_medium_url,
-            'alt_text' => $requestModel->alt_text,
-            'caption' => $requestModel->caption,
+            
+            'image' => $image ?? $requestModel->full_image_url,
+            'thumbnail_url' => $thumbnail_url ?? $requestModel->full_thumbnail_url,
+            'medium_url' => $medium_url ?? $requestModel->full_medium_url,
+            'alt_text' => $alt_text ?? $requestModel->alt_text,
+            'caption' =>$caption ??  $requestModel->caption,
+
             'created_at' => $requestModel->created_at->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
             'updated_at' => $requestModel->updated_at->timezone('Africa/Cairo')->format('Y-m-d H:i:s'),
             'name' => $customer?->name ?? '',
             'email' => $customer?->email ?? '',
             'phone' => $customer?->phone ?? '',
-            'reference_item_id' => $requestModel->reference_item_id,
-            'cover_url' => $coverUrl,
-        ])
+            
+            'reference_item_id' => $requestModel->reference_item_id, 
+            'cover_url' =>  $image,
+                    ])
         ->header('Last-Modified', $lastModifiedHeader)
         ->header('Cache-Control', 'public, max-age=0');
     }
 
     public function store(Request $request)
     {
+  
         $validator = Validator::make($request->all(), [
             'clientPhone' => 'required|string|max:20',
             'clientName' => 'nullable|string|max:255',
             'type' => 'required|string',
             'details' => 'required|string',
+
+
             'reference_item_id' => 'nullable|exists:portfolio_items,id',
+            // OR
             'image' => 'nullable|image|mimes:jpeg,jpg,png,gif,bmp,webp|max:5120',
             'altText' => 'nullable|string|max:255',
             'caption' => 'nullable|string|max:255',
         ]);
-        
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+
+        if ($validator->fails()) return response()->json(['errors' => $validator->errors()], 422);
+
+
+        // تحقق من أن أحدهما موجود: إما صورة أو reference_item_id
+        $hasReference = $request->filled('reference_item_id');
+        $hasImage = $request->hasFile('image');
+        if (!$hasReference && !$hasImage) {
+            return response()->json([
+                'errors' => [
+                    'image' => ['يجب رفع صورة إذا لم يتم اختيار عنصر مرجعي.'],
+                    'reference_item_id' => ['يجب اختيار عنصر مرجعي إذا لم يتم رفع صورة.'],
+                ]
+            ], 422);
         }
-        
+
         // البحث عن العميل أو إنشاؤه
         $customer = Customer::where('phone', $request->clientPhone)->first();
         if (!$customer) {
@@ -139,8 +185,7 @@ class DecorRequestController extends Controller
                 'phone' => $request->clientPhone,
             ]);
         }
-        
-        // معالجة رفع الصورة
+ 
         $imagePath = null;
         $thumbnailUrl = null;
         $mediumUrl = null;
@@ -151,21 +196,21 @@ class DecorRequestController extends Controller
         $originalFilename = null;
         $mimeType = null;
         $seoKeywords = null;
-        
-        if ($request->hasFile('image')) {
+
+        if ($hasImage) {
             $image = $request->file('image');
             $imageData = [
                 'altText' => $request->altText,
                 'caption' => $request->caption,
             ];
-            
-            // Process and store the image using the service
+
+            // Process and store the image using the service (always upload a new image for this request)
             $processedImage = $this->imageService->processAndStoreDecorRequestImage($image, $imageData);
-            
+
             $imagePath = $processedImage->url;
             $thumbnailUrl = $processedImage->thumbnail_url;
             $mediumUrl = $processedImage->medium_url;
-            $altText = $processedImage->alt_text;
+            $altText = $processedImage->altText;
             $caption = $processedImage->caption;
             $fileSize = $processedImage->file_size;
             $dimensions = $processedImage->dimensions;
@@ -173,7 +218,28 @@ class DecorRequestController extends Controller
             $mimeType = $processedImage->mime_type;
             $seoKeywords = $processedImage->seo_keywords;
         }
-        
+        //  elseif ($hasReference) {
+        //     // إذا كان هناك عنصر مرجعي ولم يتم رفع صورة، انسخ صورة العنصر المرجعي كصورة منفصلة لهذا الطلب
+        //     $referenceItem = \App\Models\PortfolioItem::find($request->reference_item_id);
+        //     if ($referenceItem && $referenceItem->image) {
+        //         // استخدم خدمة الصور لنسخ الصورة إلى مكان جديد لهذا الطلب
+        //         $copiedImage = $this->imageService->copyReferenceItemImageForDecorRequest($referenceItem, [
+        //             'altText' => $request->altText ?? $referenceItem->alt_text,
+        //             'caption' => $request->caption ?? $referenceItem->caption,
+        //         ]);
+        //         $imagePath = $copiedImage->url;
+        //         $thumbnailUrl = $copiedImage->thumbnail_url;
+        //         $mediumUrl = $copiedImage->medium_url;
+        //         $altText = $copiedImage->alt_text;
+        //         $caption = $copiedImage->caption;
+        //         $fileSize = $copiedImage->file_size;
+        //         $dimensions = $copiedImage->dimensions;
+        //         $originalFilename = $copiedImage->original_filename;
+        //         $mimeType = $copiedImage->mime_type;
+        //         $seoKeywords = $copiedImage->seo_keywords;
+        //     }
+        // }
+
         // إنشاء طلب الديكور
         $decorRequest = DecorRequest::create([
             'requested_by' => $customer->id,
@@ -192,7 +258,7 @@ class DecorRequestController extends Controller
             'seo_keywords' => $seoKeywords,
             'status' => 'جديد'
         ]);
-        
+
         return response()->json([
             'message' => 'Request created successfully',
             'request' => [
@@ -253,7 +319,7 @@ class DecorRequestController extends Controller
             $dataToUpdate['image'] = $processedImage->url;
             $dataToUpdate['thumbnail_url'] = $processedImage->thumbnail_url;
             $dataToUpdate['medium_url'] = $processedImage->medium_url;
-            $dataToUpdate['alt_text'] = $processedImage->alt_text;
+            $dataToUpdate['alt_text'] = $processedImage->altText;
             $dataToUpdate['caption'] = $processedImage->caption;
             $dataToUpdate['file_size'] = $processedImage->file_size;
             $dataToUpdate['dimensions'] = $processedImage->dimensions;

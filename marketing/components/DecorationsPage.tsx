@@ -78,7 +78,13 @@ const DecorationsPage: React.FC<{ language: Language }> = ({ language }) => {
   };
 
   const closeModal = () => {
-    setModalInfo(null);
+    setModalInfo({
+      isOpen: false,
+      title: undefined,
+      serviceType: undefined,
+      item: undefined,
+      requestType: "custom",
+    });
   };
 
   // دالة لفتح الصورة
@@ -124,7 +130,7 @@ const DecorationsPage: React.FC<{ language: Language }> = ({ language }) => {
   return (
     <div className="bg-gray-900 text-white">
       {/* Modal */}
-      {modalInfo.isOpen && (
+      {modalInfo?.isOpen && (
         <DecorationRequestModal
           onClose={closeModal}
           serviceTitle={modalInfo.title}
