@@ -126,13 +126,13 @@ const FeatureSection: React.FC<FeatureSectionProps> = (props) => {
                 }`}
               />
             </button>
-            <button
+            {/* <button
               onClick={handleShareClick}
               className="p-2 rounded-full bg-black/50 hover:bg-black/75 transition-colors"
               aria-label={t.sharing?.share}
             >
               <ShareIcon className="w-6 h-6 text-white" />
-            </button>
+            </button> */}
           </div>
         </div>
         <div className="p-5 flex flex-col flex-grow">

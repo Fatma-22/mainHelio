@@ -54,12 +54,23 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
   const isSimilarRequest = requestType === "similar";
 
   // دالة للتحقق من صحة رقم الهاتف
+  // This is a reasonable basic check for phone numbers allowing +, digits, spaces, and dashes, with a length between 10 and 15 (after removing spaces).
+  // It is "correct" for a generic phone validation, but may not catch all edge cases for all countries.
   const validatePhoneNumber = (phone: string): boolean => {
     const phoneRegex = /^[+]?[\d\s\-]{10,15}$/;
     return phoneRegex.test(phone.replace(/\s/g, ""));
   };
 
-  // دالة للتحقق من صحة النموذج
+  // دالة للتحقق من صحة النموذج - جميع الحقول مطلوبة مع تحقق مناسب لكل حقل
+  /**
+   * Validation logic for the decoration request form.
+   * All fields are required:
+   * - fullName: required, at least 2 characters
+   * - phone: required, must be a valid phone number (digits, +, -, spaces, 10-15 chars)
+   * - dimensions: required, at least 2 characters (could be more strict if needed)
+   * - description: required, at least 10 characters
+   * - images: required (at least 1 image) for custom requests, always required
+   */
   const validateForm = (): boolean => {
     let isValid = true;
     const newErrors = {
@@ -71,7 +82,7 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
       images: "",
     };
 
-    // التحقق من الاسم الكامل
+    // fullName: required, min 2 chars
     if (!fullName.trim()) {
       newErrors.fullName =
         language === "ar" ? "الاسم الكامل مطلوب" : "Full name is required";
@@ -84,7 +95,7 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
       isValid = false;
     }
 
-    // التحقق من رقم الهاتف
+    // phone: required, valid format
     if (!phone.trim()) {
       newErrors.phone =
         language === "ar" ? "رقم الهاتف مطلوب" : "Phone number is required";
@@ -95,7 +106,20 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
       isValid = false;
     }
 
-    // التحقق من الوصف
+    // dimensions: required, min 2 chars (you can make this stricter if needed)
+    if (!dimensions.trim()) {
+      newErrors.dimensions =
+        language === "ar" ? "الأبعاد مطلوبة" : "Dimensions are required";
+      isValid = false;
+    } else if (dimensions.trim().length < 2) {
+      newErrors.dimensions =
+        language === "ar"
+          ? "الأبعاد يجب أن تحتوي على حرفين على الأقل"
+          : "Dimensions must be at least 2 characters";
+      isValid = false;
+    }
+
+    // description: required, min 10 chars
     if (!description.trim()) {
       newErrors.description =
         language === "ar" ? "الوصف مطلوب" : "Description is required";
@@ -108,8 +132,8 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
       isValid = false;
     }
 
-    // التحقق من الصور (لطلبات التخصيص فقط)
-    if (!isSimilarRequest && images.length === 0) {
+    // images: always required (at least 1 image)
+    if (images.length === 0) {
       newErrors.images =
         language === "ar"
           ? "يجب رفع صورة واحدة على الأقل"

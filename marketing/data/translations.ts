@@ -296,7 +296,7 @@ export const translations = {
       service3Desc:
         "نتولى كافة أعمال التشطيب لوحدتك، بدءًا من التنفيذ وحتى التسليم، مع إشراف كامل لضمان أعلى مستويات الجودة.",
       requestButton: "اطلب الخدمة",
-      galleryTitle: "من أعمالنا",
+      galleryTitle: "شركاء العمل",
       gallerySubtitle: "شاهد بنفسك كيف نحول المساحات إلى تحف فنية.",
       ctaTitle: "هل لديك مشروع في هليوبوليس الجديدة؟",
       ctaSubtitle:

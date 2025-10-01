@@ -73,121 +73,191 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     onClose();
   };
 
+  /**
+   * Validate the form fields with type-specific logic.
+   *
+   * Field types:
+   * - ownerName: string
+   * - ownerPhone: string (digits only)
+   * - ownerEmail: string (email format, optional)
+   * - contactTime: string (required, select)
+   * - type: string (enum: "شقة", "فيلا", "تجاري", "ارض")
+   * - area: string (should be positive number)
+   * - price: string (should be positive number)
+   * - bedrooms: string (should be integer >= 0, required for "شقة" and "فيلا")
+   * - bathrooms: string (should be integer >= 0, required for "شقة" and "فيلا")
+   * - address: string (min length 5)
+   * - mapLocation: string (optional)
+   * - description: string (required)
+   * - keywords: string (optional)
+   * - listingPlan: string (enum: "paid", "commission")
+   * - status: string (enum, required, with special logic for "ارض")
+   * - finish: string (required for "شقة"/"فيلا" + "للبيع")
+   * all required but ownerEmail, mapLocation
+   */
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     const errorMessages = translations[language].errors;
 
-    // التحقق من الاسم
-    if (!formData.ownerName.trim()) {
+    // ownerName: string
+    if (typeof formData.ownerName !== "string" || !formData.ownerName.trim()) {
       newErrors.ownerName = errorMessages.ownerNameRequired;
     } else if (formData.ownerName.length < 3) {
       newErrors.ownerName = errorMessages.ownerNameMinLength;
     }
 
-    // التحقق من رقم الهاتف
-    const phoneRegex = /^[+]?[\d\s\-]{10,15}$/;
-    if (!formData.ownerPhone.trim()) {
+    // ownerPhone: string (digits only)
+    if (
+      typeof formData.ownerPhone !== "string" ||
+      !formData.ownerPhone.trim()
+    ) {
       newErrors.ownerPhone = errorMessages.ownerPhoneRequired;
-    } else if (!phoneRegex.test(formData.ownerPhone)) {
-      newErrors.ownerPhone = errorMessages.ownerPhoneInvalid;
+    } else if (!/^\d+$/.test(formData.ownerPhone.replace(/[\s\-]/g, ""))) {
+      newErrors.ownerPhone = "يجب إدخال رقم هاتف مكون من أرقام فقط";
     }
 
-    // التحقق من البريد الإلكتروني
+    // ownerEmail: string (email format, optional)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.ownerEmail.trim()) {
-      newErrors.ownerEmail = errorMessages.ownerEmailRequired;
-    } else if (!emailRegex.test(formData.ownerEmail)) {
+    if (
+      typeof formData.ownerEmail !== "string" &&
+      formData.ownerEmail !== undefined
+    ) {
+      newErrors.ownerEmail = errorMessages.ownerEmailInvalid;
+    } else if (
+      formData.ownerEmail &&
+      formData.ownerEmail.trim() &&
+      !emailRegex.test(formData.ownerEmail)
+    ) {
       newErrors.ownerEmail = errorMessages.ownerEmailInvalid;
     }
 
-    // التحقق من وقت التواصل
-    if (!formData.contactTime) {
+    // contactTime: string (required)
+    if (typeof formData.contactTime !== "string" || !formData.contactTime) {
       newErrors.contactTime = errorMessages.contactTimeRequired;
     }
 
-    // التحقق من نوع العقار
-    if (!formData.type) {
+    // type: string (enum)
+    if (
+      typeof formData.type !== "string" ||
+      !["شقة", "فيلا", "تجاري", "ارض"].includes(formData.type) ||
+      !formData.type
+    ) {
       newErrors.type = errorMessages.propertyTypeRequired;
     }
 
-    // التحقق من المساحة
-    if (!formData.area) {
+    // area: string (should be positive number)
+    if (typeof formData.area !== "string" || !formData.area) {
       newErrors.area = errorMessages.areaRequired;
     } else if (isNaN(Number(formData.area)) || Number(formData.area) <= 0) {
       newErrors.area = errorMessages.areaInvalid;
     }
 
-    // التحقق من السعر
-    if (!formData.price) {
+    // price: string (should be positive number)
+    if (typeof formData.price !== "string" || !formData.price) {
       newErrors.price = errorMessages.priceRequired;
     } else if (isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
       newErrors.price = errorMessages.priceInvalid;
     }
 
-    // التحقق من غرف النوم والحمامات (للشقق والفلل فقط)
+    // bedrooms: string (should be integer >= 0, required for "شقة" and "فيلا")
+    // bathrooms: string (should be integer >= 0, required for "شقة" and "فيلا")
     if (formData.type === "شقة" || formData.type === "فيلا") {
-      if (!formData.bedrooms) {
+      // bedrooms
+      if (typeof formData.bedrooms !== "string" || !formData.bedrooms) {
         newErrors.bedrooms = errorMessages.bedroomsRequired;
       } else if (
         isNaN(Number(formData.bedrooms)) ||
+        !Number.isInteger(Number(formData.bedrooms)) ||
         Number(formData.bedrooms) < 0
       ) {
         newErrors.bedrooms = errorMessages.bedroomsInvalid;
       }
-
-      if (!formData.bathrooms) {
+      if (typeof formData.bathrooms !== "string" || !formData.bathrooms) {
         newErrors.bathrooms = errorMessages.bathroomsRequired;
       } else if (
         isNaN(Number(formData.bathrooms)) ||
+        !Number.isInteger(Number(formData.bathrooms)) ||
+        Number(formData.bathrooms) < 0
+      ) {
+        newErrors.bathrooms = errorMessages.bathroomsInvalid;
+      }
+    } else {
+      // For other types, bedrooms and bathrooms are required as well
+      if (typeof formData.bedrooms !== "string" || !formData.bedrooms) {
+        newErrors.bedrooms = errorMessages.bedroomsRequired;
+      } else if (
+        isNaN(Number(formData.bedrooms)) ||
+        !Number.isInteger(Number(formData.bedrooms)) ||
+        Number(formData.bedrooms) < 0
+      ) {
+        newErrors.bedrooms = errorMessages.bedroomsInvalid;
+      }
+      if (typeof formData.bathrooms !== "string" || !formData.bathrooms) {
+        newErrors.bathrooms = errorMessages.bathroomsRequired;
+      } else if (
+        isNaN(Number(formData.bathrooms)) ||
+        !Number.isInteger(Number(formData.bathrooms)) ||
         Number(formData.bathrooms) < 0
       ) {
         newErrors.bathrooms = errorMessages.bathroomsInvalid;
       }
     }
 
-    // التحقق من العنوان
-    if (!formData.address.trim()) {
+    // address: string (min length 5)
+    if (typeof formData.address !== "string" || !formData.address.trim()) {
       newErrors.address = errorMessages.addressRequired;
     } else if (formData.address.length < 5) {
       newErrors.address = errorMessages.addressMinLength;
     }
 
-    // التحقق من الحالة
-    if (!formData.status) {
+    // status: string (enum, required, with special logic for "ارض")
+    if (typeof formData.status !== "string" || !formData.status) {
       newErrors.status = errorMessages.statusRequired;
+    } else if (
+      formData.type === "ارض" &&
+      formData.status !== "للبيع" &&
+      formData.status !== "شراكة"
+    ) {
+      newErrors.status = "للأراضي، يجب اختيار حالة 'للبيع' أو 'شراكة' فقط";
     }
 
-    // التحقق من خطة الإدراج
-    if (!formData.listingPlan) {
+    // listingPlan: string (enum: "paid", "commission")
+    if (
+      typeof formData.listingPlan !== "string" ||
+      !formData.listingPlan ||
+      !["paid", "commission"].includes(formData.listingPlan)
+    ) {
       newErrors.listingPlan = errorMessages.listingPlanRequired;
     }
 
-    // التحقق من الموقع على الخريطة
-    if (!formData.mapLocation.trim()) {
-      newErrors.mapLocation = errorMessages.mapLocationRequired;
-    }
+    // mapLocation: string (optional) - no validation
 
-    // التحقق من الكلمات المفتاحية
-    if (!formData.keywords.trim()) {
-      newErrors.keywords = errorMessages.keywordsRequired;
-    }
+    // keywords: string (optional) - no validation
 
-    // التحقق من الوصف
-    if (!formData.description.trim()) {
+    // description: string (required)
+    if (
+      typeof formData.description !== "string" ||
+      !formData.description.trim()
+    ) {
       newErrors.description = errorMessages.descriptionRequired;
     }
 
-    // التحقق من الصور - يجب أن يكون هناك 3 صور على الأقل
-    if (images.length < 3) {
-      newErrors.images = errorMessages.imagesMinCount;
+    // images: ImageItem[] (must have at least 1)
+    if (!Array.isArray(images) || images.length < 1) {
+      newErrors.images = "يجب رفع صورة واحدة على الأقل للعقار";
     }
 
-    // التحقق من التشطيب (للعقارات المباعة فقط)
+    // finish: string (required for "شقة"/"فيلا" + "للبيع")
     if (
       formData.status === "للبيع" &&
       (formData.type === "شقة" || formData.type === "فيلا")
     ) {
-      if (!formData.finish) {
+      if (typeof formData.finish !== "string" || !formData.finish) {
+        newErrors.finish = errorMessages.finishRequired;
+      }
+    } else {
+      // For other types, finish is required as well
+      if (typeof formData.finish !== "string" || !formData.finish) {
         newErrors.finish = errorMessages.finishRequired;
       }
     }
@@ -458,7 +528,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                     <input
                       type="email"
                       id="ownerEmail"
-                      required
                       className={`${inputClasses} ${
                         errors.ownerEmail ? "border-red-500" : ""
                       }`}
@@ -615,6 +684,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                       <option value="">{t.selectStatus}</option>
                       <option value="للبيع">{t.forSale}</option>
                       <option value="للإيجار">{t.forRent}</option>
+                      <option value="شراكة">شراكة</option>
                     </select>
                     {errors.status && (
                       <div className="text-red-500 text-sm mt-1">
@@ -670,7 +740,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                         className={`${inputClasses} ${
                           errors.mapLocation ? "border-red-500" : ""
                         }`}
-                        required
                         value={formData.mapLocation}
                         onChange={handleChange}
                       />
@@ -690,7 +759,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                           errors.keywords ? "border-red-500" : ""
                         }`}
                         placeholder={t.keywordsPlaceholder}
-                        required
                         value={formData.keywords}
                         onChange={handleChange}
                       ></textarea>
@@ -710,13 +778,13 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                         {t.description}
                       </label>
                       {/* <button 
-                                  type="button" 
-                                  onClick={handleGenerateDescription} 
-                                  disabled={isGenerating} 
-                                  className="text-sm text-amber-500 font-semibold hover:text-amber-400 disabled:text-gray-500 disabled:cursor-wait flex items-center gap-1"
-                                >
-                                    {isGenerating ? t.generating : t.generateWithAI} ✨
-                                </button> */}
+                          type="button" 
+                          onClick={handleGenerateDescription} 
+                          disabled={isGenerating} 
+                          className="text-sm text-amber-500 font-semibold hover:text-amber-400 disabled:text-gray-500 disabled:cursor-wait flex items-center gap-1"
+                        >
+                            {isGenerating ? t.generating : t.generateWithAI} ✨
+                        </button> */}
                     </div>
                     <textarea
                       id="description"
@@ -753,7 +821,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                           if (isSubmitting) return;
                           setImages(newImages);
                         }}
-                        minImages={3}
+                        minImages={1}
                         maxImages={20}
                         language={language}
                         onUploadComplete={handleUploadComplete}
@@ -787,6 +855,54 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   </FormField>
                 </div>
               </div>
+
+              <div className="p-4 mt-4 bg-blue-900/20 border border-blue-700 rounded-lg space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-blue-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <span className="text-blue-400 font-medium">
+                    {language === "ar" ? "ملاحظات هامة" : "Important Notes"}
+                  </span>
+                </div>
+                <ul className="list-disc rtl:pr-4 ltr:pl-4 text-sm text-gray-300 space-y-1">
+                  <li>
+                    {language === "ar"
+                      ? "ستحتاج اثبات ملكية العقار قبل الموافقة على الطلب."
+                      : "You will need to provide proof of property ownership before your request is approved."}
+                  </li>
+                  <li>
+                    {language === "ar" ? (
+                      <>
+                        السادة أصحاب مكاتب العقارات أنتم مرحب بكم، يرجى التواصل
+                        من خلال{" "}
+                        <a href="/contact" className="text-blue-400 underline">
+                          تواصل معنا
+                        </a>
+                      </>
+                    ) : (
+                      <>
+                        Real estate offices are welcome. Please contact us via{" "}
+                        <a href="/contact" className="text-blue-400 underline">
+                          Contact Us
+                        </a>
+                      </>
+                    )}
+                  </li>
+                </ul>
+              </div>
+
               <div className="pt-6 flex justify-end">
                 <button
                   type="submit"
