@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ONLY HELIO | روائع معمارية في هليوبوليس الجديدة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            container: {
+              center: true,
+              padding: "1rem",
+              screens: {
+                "2xl": "1280px", // Custom max width instead of default 1536px
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <style>
+      html {
+        font-size: 80%;
+      }
+      body {
+        font-family: "Tajawal", sans-serif;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .animate-fadeIn {
+        animation: fadeIn 0.3s ease-out;
+      }
+      @keyframes calm-background {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+      .animate-calm-background {
+        background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #0f172a);
+        background-size: 400% 400%;
+        animation: calm-background 15s ease infinite;
+      }
+      .leaflet-popup-content-wrapper {
+        background-color: #1f2937; /* bg-gray-800 */
+        color: #d1d5db; /* text-gray-300 */
+        border-radius: 0.5rem;
+        border: 1px solid #374151; /* border-gray-700 */
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+      .leaflet-popup-content {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 250px !important;
+      }
+      .leaflet-popup-close-button {
+        color: #d1d5db !important;
+      }
+      .leaflet-popup-tip {
+        background: #1f2937; /* bg-gray-800 */
+      }
+      .leaflet-container a.leaflet-popup-close-button {
+        top: 12px;
+        right: 12px;
+      }
+
+      /* Custom container overrides */
+      .container-narrow {
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+
+      .container-wide {
+        max-width: 1600px;
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: 2rem;
+        padding-right: 2rem;
+      }
+
+      @media (min-width: 640px) {
+        .container-narrow {
+          padding-left: 2rem;
+          padding-right: 2rem;
+        }
+        .container-wide {
+          padding-left: 3rem;
+          padding-right: 3rem;
+        }
+      }
+
+      @media (min-width: 1024px) {
+        .container-narrow {
+          padding-left: 3rem;
+          padding-right: 3rem;
+        }
+        .container-wide {
+          padding-left: 4rem;
+          padding-right: 4rem;
+        }
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.2.0",
+          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+          "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+          "react/": "https://esm.sh/react@18.2.0/",
+          "react-router-dom": "https://esm.sh/react-router-dom@6.23.1?deps=react@18.2.0",
+          "@google/genai": "https://esm.sh/@google/genai@^1.14.0",
+          "leaflet": "https://esm.sh/leaflet@1.9.4",
+          "react-leaflet": "https://esm.sh/react-leaflet@4.2.1?deps=react@18.2.0,leaflet@1.9.4"
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-gray-900 text-gray-200">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
