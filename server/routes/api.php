@@ -26,6 +26,7 @@ use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\VimeoController;
 
 // Debug route for Cloudinary configuration
 Route::get('/debug/cloudinary', function () {
@@ -177,6 +178,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // Uploads
         Route::apiResource('uploads', UploadController::class)->except(['index','show']);
         Route::get('/uploads', [UploadController::class, 'index']);
+
+        // Vimeo Video Management
+        Route::prefix('vimeo')->group(function () {
+            Route::get('/test', [VimeoController::class, 'testConnection']);
+            Route::get('/user-info', [VimeoController::class, 'getUserInfo']);
+            Route::get('/quota', [VimeoController::class, 'getUploadQuota']);
+            Route::get('/videos', [VimeoController::class, 'getUserVideos']);
+            Route::post('/videos/upload', [VimeoController::class, 'uploadVideo']);
+            Route::get('/videos/{videoId}', [VimeoController::class, 'getVideo']);
+            Route::put('/videos/{videoId}', [VimeoController::class, 'updateVideo']);
+            Route::delete('/videos/{videoId}', [VimeoController::class, 'deleteVideo']);
+            Route::get('/videos/{videoId}/stats', [VimeoController::class, 'getVideoStats']);
+            Route::get('/videos/{videoId}/embed', [VimeoController::class, 'generateEmbedHtml']);
+        });
 
     });  
 });
