@@ -22,7 +22,6 @@ const UserRoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
   };
   return <span className={`${baseClasses} ${roles[role] || 'bg-gray-500/20 text-gray-400'}`}>{role}</span>;
 };
-
 const roleMap: Record<number, UserRole> = {
   1: 'مدير عام',
   2: 'مندوب مبيعات',

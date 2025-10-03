@@ -65,6 +65,7 @@ export function mapApiPropertyToProperty(apiProp: any): Property {
   };
 
   return {
+    ...apiProp,
     id: apiProp.id || 0,
     title: apiProp.title_ar || apiProp.title_en || apiProp.title || "",
     price: apiProp.price || "",
@@ -112,6 +113,7 @@ export function mapApiPropertyRequestToPropertyRequest(
   apiReq: any
 ): PropertyRequest {
   return {
+    ...apiReq,
     id: apiReq.id,
     requesterName: apiReq.name || apiReq.requesterName,
     requesterPhone: apiReq.phone || apiReq.requesterPhone || "",
@@ -255,29 +257,39 @@ export function mapApiSiteContentToSiteContent(apiData: any): SiteContent {
 }
 
 // Backend -> UI
-export const mapApiImageToImageItem = (img: ApiImage): ImageItem => ({
-  id: String(img.id || Math.random()),
-  file: null,
-  altText: img.alt_text || "",
-  caption: img.caption || "",
-  isFeatured: img.isfeatured === 1,
-  sort: img.sort || 0,
-  previewUrl: img.url || "",
-  thumbnailUrl: img.thumbnail_url || "",
-  mediumUrl: img.medium_url || "",
-  width: img.dimensions?.width || 0,
-  height: img.dimensions?.height || 0,
-  valid: true,
-  serverUrl: img.url || "",
-  fileSize: img.file_size || 0,
-  dimensions: img.dimensions || { width: 0, height: 0 },
-  originalFilename: img.original_filename || "",
-  mimeType: img.mime_type || "",
-  seoKeywords: img.seo_keywords || "",
-  isExisting: true,
-  originalId: img.id,
-  filename: img.url?.split("/").pop() || `image-${img.id}.jpg`,
-});
+export const mapApiImageToImageItem = (img: ApiImage): ImageItem => {
+  const rawIsFeatured: any =
+    (img as any).isfeatured ?? (img as any).is_featured;
+  const normalizedIsFeatured =
+    rawIsFeatured === 1 ||
+    rawIsFeatured === "1" ||
+    rawIsFeatured === true ||
+    rawIsFeatured === "true";
+
+  return {
+    id: String(img.id || Math.random()),
+    file: null,
+    altText: img.alt_text || "",
+    caption: img.caption || "",
+    isFeatured: normalizedIsFeatured,
+    sort: img.sort || 0,
+    previewUrl: img.url || "",
+    thumbnailUrl: img.thumbnail_url || "",
+    mediumUrl: img.medium_url || "",
+    width: img.dimensions?.width || 0,
+    height: img.dimensions?.height || 0,
+    valid: true,
+    serverUrl: img.url || "",
+    fileSize: img.file_size || 0,
+    dimensions: img.dimensions || { width: 0, height: 0 },
+    originalFilename: img.original_filename || "",
+    mimeType: img.mime_type || "",
+    seoKeywords: img.seo_keywords || "",
+    isExisting: true,
+    originalId: img.id,
+    filename: img.url?.split("/").pop() || `image-${img.id}.jpg`,
+  };
+};
 
 // UI -> Backend
 export const mapImageItemToApiImage = (img: ImageItem): ApiImage => ({

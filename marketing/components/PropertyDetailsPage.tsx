@@ -14,6 +14,8 @@ import { translations } from "../data/translations";
 import { useFavorites } from "./shared/FavoritesContext";
 import { Loader2, Settings } from "lucide-react";
 import { Property } from "@/types";
+import PropertyVideoGallery from "./PropertyVideoGallery";
+import YouTubeVideoPlayer from "./YouTubeVideoPlayer";
 
 interface PropertyDetailsPageProps {
   language: Language;
@@ -161,16 +163,61 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Images and Map */}
           <div className="lg:col-span-2">
-            {/* Image Gallery */}
+            {/* Combined Image & Video Gallery */}
             <div className="mb-8">
               <div className="relative mb-4">
-                <img
-                  src={mainImage}
-                  alt={property.title}
-                  className="w-full h-[500px] object-cover rounded-lg shadow-lg"
-                  loading="lazy"
-                />{" "}
-                {/* تم التعديل هنا */}
+                {/* Main image or video */}
+                {mainImage &&
+                mainImage.startsWith("http") &&
+                !mainImage.includes("youtube.com") &&
+                !mainImage.includes("youtu.be") ? (
+                  <img
+                    src={mainImage}
+                    alt={property.title}
+                    className="w-full h-[500px] object-cover rounded-lg shadow-lg"
+                    loading="lazy"
+                  />
+                ) : mainImage &&
+                  (mainImage.includes("youtube.com") ||
+                    mainImage.includes("youtu.be")) ? (
+                  // If mainImage is a YouTube URL, render the video player
+                  (() => {
+                    // Try to extract YouTube video ID
+                    let videoId = "";
+                    try {
+                      let url = new URL(mainImage);
+                      if (url.hostname.includes("youtube.com")) {
+                        const params = new URLSearchParams(url.search);
+                        videoId = params.get("v") || "";
+                      } else if (url.hostname.includes("youtu.be")) {
+                        videoId = url.pathname.replace("/", "");
+                      }
+                    } catch (e) {}
+                    if (videoId) {
+                      return (
+                        <YouTubeVideoPlayer
+                          videoId={videoId}
+                          title={property?.title}
+                          width="100%"
+                          height={500}
+                          className="rounded-lg shadow-lg"
+                          autoplay={false}
+                        />
+                      );
+                    }
+                    // fallback
+                    return (
+                      <div className="w-full h-[500px] flex items-center justify-center bg-gray-800 rounded-lg shadow-lg">
+                        <span className="text-gray-400">Video unavailable</span>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div className="w-full h-[500px] flex items-center justify-center bg-gray-800 rounded-lg shadow-lg">
+                    <span className="text-gray-400">No image or video</span>
+                  </div>
+                )}
+
                 <span
                   className={`absolute top-4 ${
                     language === "ar" ? "right-4" : "left-4"
@@ -185,18 +232,20 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
                       : "For Sale"
                     : language === "ar"
                     ? "للإيجار"
-                    : "For Rent"}{" "}
+                    : "For Rent"}
                   {/* تم التعديل هنا */}
                 </span>
               </div>
-              {property.gallery && property.gallery.length > 0 ? (
+              {(property.gallery && property.gallery.length > 0) ||
+              (property.videos && property.videos.length > 0) ? (
                 <div className="grid grid-cols-5 gap-2">
-                  {property.gallery.map((img, index) => (
+                  {/* Images */}
+                  {property.gallery?.map((img, index) => (
                     <img
-                      key={index}
+                      key={`img-${index}`}
                       src={img?.thumbnailUrl}
                       alt={`Thumbnail ${index + 1}`}
-                      className={`w-full h-24 object-cover rounded-md cursor-pointer border-2 transition-all ${
+                      className={`w-full h-32 object-cover rounded-md cursor-pointer border-2 transition-all ${
                         mainImage === img?.previewUrl
                           ? "border-amber-500"
                           : "border-transparent hover:border-amber-400"
@@ -205,6 +254,40 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
                       loading="lazy"
                     />
                   ))}
+                  {/* Videos */}
+                  {property.videos?.map((video, vIdx) => {
+                    return (
+                      <div
+                        key={`vid-${vIdx}`}
+                        className={`relative w-full h-32 rounded-md cursor-pointer border-2 transition-all overflow-hidden ${
+                          mainImage === video.video_url
+                            ? "border-amber-500"
+                            : "border-transparent hover:border-amber-400"
+                        }`}
+                        onClick={() => setMainImage(video.video_url)}
+                        title={"YouTube Video"}
+                      >
+                        <img
+                          src={
+                            video?.thumbnail_url ||
+                            "/images/video-placeholder.png"
+                          }
+                          alt={`Video Thumbnail ${vIdx + 1}`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <svg
+                            className="w-10 h-10 text-white bg-black bg-opacity-50 rounded-full p-2"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : null}
             </div>

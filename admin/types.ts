@@ -12,6 +12,12 @@ export type Page =
   | "إدارة الديكورات"
   | "إدارة معرض الأعمال";
 export type PropertyFinish = "full" | "partial" | "bare"; // تشطيب كامل / نص تشطيب / على الطوب
+export type PropertyVideo = {
+  id: number;
+  property_id: number;
+  video_url: string;
+  thumbnail_url?: string;
+};
 
 export interface StatCardData {
   title: string;
@@ -63,6 +69,7 @@ export interface Property {
   thumbnailUrl?: string;
   mediumUrl?: string;
   gallery: ApiImage[] | ImageItem[];
+  videos?: PropertyVideo[];
   address: string;
   isListed: boolean;
   listingEndDate: string;
@@ -128,6 +135,7 @@ export interface PropertyRequest {
   thumbnailUrl?: string;
   mediumUrl?: string;
   gallery: ApiImage[] | ImageItem[];
+  videos?: PropertyVideo[];
   listingEndDate: string;
   latitude?: number;
   longitude?: number;

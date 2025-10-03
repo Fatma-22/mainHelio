@@ -48,6 +48,12 @@ export interface ApiImage {
 
 export type PropertyStatus = "للبيع" | "للإيجار" | "مباع" | "مؤجر";
 export type PropertyType = "شقة" | "فيلا" | "أرض" | "تجاري";
+export type PropertyVideo = {
+  id: number;
+  property_id: number;
+  video_url: string;
+  thumbnail_url?: string;
+};
 
 export interface Property {
   id: number;
@@ -60,6 +66,7 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   imageUrl: string;
+  videos?: PropertyVideo[];
   thumbnailUrl?: string;
   mediumUrl?: string;
   gallery: ApiImage[] | ImageItem[];
@@ -126,6 +133,7 @@ export interface PropertyRequest {
   keywords: string;
   imageUrl: string;
   thumbnailUrl?: string;
+  videos?: PropertyVideo[];
   mediumUrl?: string;
   gallery: ApiImage[] | ImageItem[];
   listingEndDate: string;

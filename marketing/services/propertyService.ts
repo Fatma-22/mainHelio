@@ -24,12 +24,27 @@ export const getFeaturedProperties = async (): Promise<Property[]> => {
 export const createProperty = async (propertyData: any): Promise<Property> => {
   const formData = new FormData();
 
-  // إضافة البيانات النصية
+  // إضافة البيانات النصية (عدا الحقول الخاصة التي تعالج أدناه)
   Object.keys(propertyData).forEach((key) => {
-    if (key !== "images" && key !== "imagesData") {
-      formData.append(key, propertyData[key]);
+    if (
+      key !== "images" &&
+      key !== "imagesData" &&
+      key !== "videos" &&
+      key !== "keywords"
+    ) {
+      const value = propertyData[key];
+      formData.append(key, value == null ? "" : value);
     }
   });
+
+  // تطبيع الكلمات المفتاحية لتكون نصاً دائماً
+  if ("keywords" in propertyData) {
+    const kw = propertyData.keywords;
+    const normalized = Array.isArray(kw)
+      ? kw.filter(Boolean).join(",")
+      : kw ?? "";
+    formData.append("keywords", normalized);
+  }
 
   // إضافة الصور
   if (propertyData.images && propertyData.images.length > 0) {
@@ -51,6 +66,23 @@ export const createProperty = async (propertyData: any): Promise<Property> => {
         }
         formData.append(`imagesData[${index}][${key}]`, value);
       });
+    });
+  }
+
+  // إضافة الفيديوهات كحقول مفهرسة ليتعرف عليها Laravel كمصفوفة
+  if (Array.isArray(propertyData.videos) && propertyData.videos.length > 0) {
+    propertyData.videos.forEach((video: any, index: number) => {
+      if (video && (video.video_url || video.thumbnail_url)) {
+        if (video.video_url) {
+          formData.append(`videos[${index}][video_url]`, video.video_url);
+        }
+        if (video.thumbnail_url) {
+          formData.append(
+            `videos[${index}][thumbnail_url]`,
+            video.thumbnail_url
+          );
+        }
+      }
     });
   }
 

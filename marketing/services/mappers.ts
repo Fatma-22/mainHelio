@@ -40,6 +40,7 @@ export function mapApiPropertyToProperty(apiProp: any): Property {
   };
 
   return {
+    ...apiProp,
     id: apiProp.id || 0,
     title: apiProp.title_ar || apiProp.title_en || apiProp.title || "",
     price: apiProp.price || "",
