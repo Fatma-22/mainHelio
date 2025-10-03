@@ -1,16 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import type { PropertyRequest, Property, ImageItem, ApiImage } from '../types';
-import PropertyModal from '../components/PropertyModal';
-import { exportToCSV } from '../utils/export';
-import { ICONS } from '../constants';
-import { mapApiImageToImageItem, mapImageItemToApiImage } from "../services/mappers";
+import React, { useState, useEffect } from "react";
+import type { PropertyRequest, Property, ImageItem, ApiImage } from "../types";
+import PropertyModal from "../components/PropertyModal";
+import { exportToCSV } from "../utils/export";
+import { ICONS } from "../constants";
+import {
+  mapApiImageToImageItem,
+  mapImageItemToApiImage,
+} from "../services/mappers";
+import { InboxIcon } from "@heroicons/react/24/outline";
 
 export interface PropertyRequestsPageProps {
   requests: PropertyRequest[];
   onApprove: (request: PropertyRequest) => Promise<void>;
   onReject: (requestId: number) => Promise<void>;
-  onEditAndApprove: (editedPropertyData: Omit<PropertyRequest, 'id' | 'imageUrl' | 'addedDate'>, originalRequestId: number) => Promise<void>;
-  showToast: (message: string, type?: 'success' | 'error') => void;
+  onEditAndApprove: (
+    editedPropertyData: Omit<PropertyRequest, "id" | "imageUrl" | "addedDate">,
+    originalRequestId: number
+  ) => Promise<void>;
+  showToast: (message: string, type?: "success" | "error") => void;
 }
 
 const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
@@ -18,20 +25,23 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
   onApprove,
   onReject,
   onEditAndApprove,
-  showToast
+  showToast,
 }) => {
-  const [selectedRequest, setSelectedRequest] = useState<PropertyRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] =
+    useState<PropertyRequest | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-  
+
   // دالة مساعدة لتحويل الصور بشكل آمن
-  const convertGalleryToImageItems = (gallery: ApiImage[] | ImageItem[] | undefined): ImageItem[] => {
+  const convertGalleryToImageItems = (
+    gallery: ApiImage[] | ImageItem[] | undefined
+  ): ImageItem[] => {
     if (!gallery) return [];
-    
-    return gallery.map(img => {
+
+    return gallery.map((img) => {
       // تحقق إذا كان الكائن لديه خاصية previewUrl (يعني أنه ImageItem)
-      if ('previewUrl' in img) {
+      if ("previewUrl" in img) {
         return img as ImageItem;
       } else {
         // تحويل من ApiImage إلى ImageItem
@@ -39,21 +49,21 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
       }
     });
   };
-  
+
   // دالة للحصول على رابط الصورة بشكل آمن - تعمل مع كلا النوعين
   const getImageUrl = (image: ApiImage | ImageItem): string => {
-    if ('previewUrl' in image) {
+    if ("previewUrl" in image) {
       // ImageItem
-      return image.previewUrl || image.serverUrl || '';
+      return image.previewUrl || image.serverUrl || "";
     } else {
       // ApiImage
-      return image.url || '';
+      return image.url || "";
     }
   };
-  
+
   // دالة للحصول على النص البديل للصورة بشكل آمن - تعمل مع كلا النوعين
   const getImageAlt = (image: ApiImage | ImageItem): string => {
-    if ('previewUrl' in image) {
+    if ("previewUrl" in image) {
       // ImageItem
       return image.altText || `صورة العقار`;
     } else {
@@ -61,10 +71,10 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
       return image.alt_text || `صورة العقار`;
     }
   };
-  
+
   // دالة للحصول على حالة الصورة المميزة بشكل آمن - تعمل مع كلا النوعين
   const getImageFeatured = (image: ApiImage | ImageItem): boolean => {
-    if ('previewUrl' in image) {
+    if ("previewUrl" in image) {
       // ImageItem
       return image.isFeatured || false;
     } else {
@@ -72,13 +82,13 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
       return image.isfeatured === 1;
     }
   };
-  
+
   // Synchronize selectedRequest when requests change
   useEffect(() => {
     if (requests.length > 0) {
       const first = {
         ...requests[0],
-        gallery: convertGalleryToImageItems(requests[0].gallery)
+        gallery: convertGalleryToImageItems(requests[0].gallery),
       };
       setSelectedRequest(first);
     } else {
@@ -86,18 +96,26 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
     }
   }, [requests]);
 
-  
   // Open modal for editing
   const handleEditClick = () => {
     if (selectedRequest) setIsModalOpen(true);
   };
-  
+
   // Save edited property and publish
-  const handleModalSave = (editedData: Omit<PropertyRequest, 'id' | 'imageUrl' | 'gallery'> & { id?: number; gallery?: ImageItem[] }) => {
+  const handleModalSave = (
+    editedData: Omit<PropertyRequest, "id" | "imageUrl" | "gallery"> & {
+      id?: number;
+      gallery?: ImageItem[];
+    }
+  ) => {
     if (selectedRequest) {
       // تحويل البيانات إلى النوع المطلوب لـ onEditAndApprove
-      const propertyData: Omit<PropertyRequest, 'id' | 'imageUrl' | 'addedDate'> = {
+      const propertyData: Omit<
+        PropertyRequest,
+        "id" | "imageUrl" | "addedDate"
+      > = {
         title: editedData.title,
+        videos: editedData.videos,
         address: editedData.address,
         price: editedData.price,
         status: editedData.status,
@@ -118,31 +136,29 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
         requesterName: editedData.requesterName,
         requesterPhone: editedData.requesterPhone,
         requestDate: editedData.requestDate,
-        gallery: editedData.gallery?.map(mapImageItemToApiImage)
-
+        gallery: editedData.gallery?.map(mapImageItemToApiImage),
       };
-      
+
       onEditAndApprove(propertyData, selectedRequest.id);
     }
     setIsModalOpen(false);
   };
-  
+
   // Export requests to CSV
   const handleExport = () => {
     if (requests.length === 0) {
-      showToast('لا توجد طلبات لتصديرها', 'error');
+      showToast("لا توجد طلبات لتصديرها", "error");
       return;
     }
-    exportToCSV(requests, 'property-requests.csv');
-    showToast('تم تصدير الطلبات بنجاح', 'success');
+    exportToCSV(requests, "property-requests.csv");
+    showToast("تم تصدير الطلبات بنجاح", "success");
   };
-  
+
   // 🔹 دالة لفتح الصورة المكبرة
   const openEnlargedImage = (previewUrl: string, index: number) => {
     setEnlargedImage(previewUrl);
     setCurrentImageIndex(index);
   };
-
 
   // 🔹 دالة لإغلاق الصورة المكبرة
   const closeEnlargedImage = () => {
@@ -150,15 +166,22 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
   };
 
   // 🔹 دالة للتنقل بين الصور في العرض المكبر
-  const navigateImage = (direction: 'next' | 'prev') => {
-    if (!selectedRequest || !selectedRequest.gallery || selectedRequest.gallery.length === 0) return;
-    
-    if (direction === 'next') {
+  const navigateImage = (direction: "next" | "prev") => {
+    if (
+      !selectedRequest ||
+      !selectedRequest.gallery ||
+      selectedRequest.gallery.length === 0
+    )
+      return;
+
+    if (direction === "next") {
       const newIndex = (currentImageIndex + 1) % selectedRequest.gallery.length;
       setCurrentImageIndex(newIndex);
       setEnlargedImage(getImageUrl(selectedRequest.gallery[newIndex]));
     } else {
-      const newIndex = (currentImageIndex - 1 + selectedRequest.gallery.length) % selectedRequest.gallery.length;
+      const newIndex =
+        (currentImageIndex - 1 + selectedRequest.gallery.length) %
+        selectedRequest.gallery.length;
       setCurrentImageIndex(newIndex);
       setEnlargedImage(getImageUrl(selectedRequest.gallery[newIndex]));
     }
@@ -166,20 +189,26 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
 
   // 🔹 دالة لعرض الكلمات المفتاحية كعلامات
   const renderKeywords = () => {
-    if (!selectedRequest || !selectedRequest.keywords || selectedRequest.keywords.length === 0) {
-      return <p className="text-gray-500 italic">لا توجد كلمات مفتاحية محددة</p>;
+    if (
+      !selectedRequest ||
+      !selectedRequest.keywords ||
+      selectedRequest.keywords.length === 0
+    ) {
+      return (
+        <p className="text-gray-500 italic">لا توجد كلمات مفتاحية محددة</p>
+      );
     }
-    
+
     // تحويل الكلمات المفتاحية إلى مصفوفة إذا كانت نصاً
-    const keywords = Array.isArray(selectedRequest.keywords) 
-      ? selectedRequest.keywords 
-      : selectedRequest.keywords.split(',').map(k => k.trim());
-    
+    const keywords = Array.isArray(selectedRequest.keywords)
+      ? selectedRequest.keywords
+      : selectedRequest.keywords.split(",").map((k) => k.trim());
+
     return (
       <div className="flex flex-wrap gap-2">
         {keywords.map((keyword, index) => (
-          <span 
-            key={index} 
+          <span
+            key={index}
             className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm"
           >
             {keyword}
@@ -204,7 +233,9 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
         <div className="w-1/3 border-l border-gray-700 flex flex-col">
           <div className="p-4 border-b border-gray-700 flex justify-between items-center">
             <div>
-              <h2 className="text-xl font-bold text-white">طلبات معلقة ({requests.length})</h2>
+              <h2 className="text-xl font-bold text-white">
+                طلبات معلقة ({requests.length})
+              </h2>
               <p className="text-sm text-gray-400">اختر طلبًا لمراجعته</p>
             </div>
             <button
@@ -217,26 +248,29 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
           </div>
           <ul className="overflow-y-auto flex-1">
             {requests.map((request) => (
-               <li
-                  key={request.id}
-                 onClick={() => {
-                    // استخدام الدالة المساعدة لتحويل الصور
-                    setSelectedRequest({
-                      ...request,
-                      gallery: convertGalleryToImageItems(request.gallery)
-                    });
-                  }}
-                  className={`p-4 cursor-pointer border-r-4 transition-colors ${
-                    selectedRequest?.id === request.id
-                      ? 'bg-gray-700/50 border-blue-500'
-                      : 'border-transparent hover:bg-gray-700/30'
-                  }`}
-                >
+              <li
+                key={request.id}
+                onClick={() => {
+                  // استخدام الدالة المساعدة لتحويل الصور
+                  setSelectedRequest({
+                    ...request,
+                    gallery: convertGalleryToImageItems(request.gallery),
+                  });
+                }}
+                className={`p-4 cursor-pointer border-r-4 transition-colors ${
+                  selectedRequest?.id === request.id
+                    ? "bg-gray-700/50 border-blue-500"
+                    : "border-transparent hover:bg-gray-700/30"
+                }`}
+              >
                 <p className="font-bold text-white truncate">{request.title}</p>
                 <p className="text-sm text-gray-300 mt-1">
-                  مقدم الطلب: <span className="font-medium">{request.requesterName}</span>
+                  مقدم الطلب:{" "}
+                  <span className="font-medium">{request.requesterName}</span>
                 </p>
-                <p className="text-xs text-gray-500 mt-2">{request.requestDate}</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  {request.requestDate}
+                </p>
               </li>
             ))}
           </ul>
@@ -247,9 +281,15 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
             <>
               <div className="p-4 border-b border-gray-700 flex justify-between items-center">
                 <div>
-                  <h3 className="text-lg font-bold text-white">مراجعة طلب إضافة عقار</h3>
+                  <h3 className="text-lg font-bold text-white">
+                    مراجعة طلب إضافة عقار
+                  </h3>
                   <p className="text-sm text-gray-400">
-                    مقدم من: <span className="font-medium text-blue-400">{selectedRequest.requesterName}</span> ({selectedRequest.requesterPhone})
+                    مقدم من:{" "}
+                    <span className="font-medium text-blue-400">
+                      {selectedRequest.requesterName}
+                    </span>{" "}
+                    ({selectedRequest.requesterPhone})
                   </p>
                 </div>
                 <div className="flex gap-3">
@@ -273,45 +313,53 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
                   </button>
                 </div>
               </div>
-              
+
               {/* عرض تفاصيل الطلب */}
               <div className="p-6 overflow-y-auto flex-1">
                 <div className="mb-6">
-                  <h4 className="text-md font-bold text-white mb-2">عنوان العقار</h4>
+                  <h4 className="text-md font-bold text-white mb-2">
+                    عنوان العقار
+                  </h4>
                   <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
                     <p className="text-gray-300">{selectedRequest.title}</p>
                   </div>
                 </div>
-                
+
                 <div className="mb-6">
-                  <h4 className="text-md font-bold text-white mb-2">وصف العقار</h4>
+                  <h4 className="text-md font-bold text-white mb-2">
+                    وصف العقار
+                  </h4>
                   <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                    <p className="text-gray-300">{selectedRequest.description}</p>
+                    <p className="text-gray-300">
+                      {selectedRequest.description}
+                    </p>
                   </div>
                 </div>
-                
+
                 {/* 🔹 قسم عرض الصور - التعديل الرئيسي هنا */}
                 <div className="mb-6">
-                  <h4 className="text-md font-bold text-white mb-2">صور العقار</h4>
-                  {selectedRequest.gallery && selectedRequest.gallery.length > 0 ? (
+                  <h4 className="text-md font-bold text-white mb-2">
+                    صور العقار
+                  </h4>
+                  {selectedRequest.gallery &&
+                  selectedRequest.gallery.length > 0 ? (
                     <div className="grid grid-cols-3 gap-4">
                       {selectedRequest.gallery.map((image, index) => {
                         // استخدام الدوال المساعدة للحصول على بيانات الصورة
                         const imageUrl = getImageUrl(image);
                         const imageAlt = getImageAlt(image);
                         const isFeatured = getImageFeatured(image);
-                        
+
                         return (
-                          <div 
-                            key={index} 
+                          <div
+                            key={index}
                             className="relative group cursor-pointer rounded-lg overflow-hidden bg-gray-900/50 border border-gray-700 aspect-square"
                             onClick={() => openEnlargedImage(imageUrl, index)}
                           >
-                            <img 
-                              src={imageUrl} 
-                              alt={imageAlt} 
+                            <img
+                              src={imageUrl}
+                              alt={imageAlt}
                               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                              
                             />
                             {isFeatured && (
                               <span className="absolute top-2 left-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded">
@@ -324,11 +372,37 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
                     </div>
                   ) : (
                     <div className="bg-gray-900/50 p-8 rounded-lg border border-gray-700 flex justify-center items-center">
-                      <p className="text-gray-500 italic">لا توجد صور مرفقة مع هذا الطلب</p>
+                      <p className="text-gray-500 italic">
+                        لا توجد صور مرفقة مع هذا الطلب
+                      </p>
                     </div>
                   )}
                 </div>
-                
+                {!!selectedRequest?.videos?.length && (
+                  <div className="grid grid-cols-3 gap-4">
+                    {selectedRequest?.videos.map((video, index) => {
+                      return (
+                        <div key={video.id || index}>
+                          <a
+                            href={video?.thumbnail_url}
+                            target="_blank"
+                            className="flex-shrink-0"
+                          >
+                            <img
+                              src={video?.thumbnail_url}
+                              alt="Video thumbnail"
+                              className=" size-full object-cover rounded"
+                              onError={(e) => {
+                                // Fallback to default thumbnail if maxres doesn't exist
+                                e.currentTarget.src = video?.thumbnail_url;
+                              }}
+                            />
+                          </a>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div>
                     <h4 className="text-md font-bold text-white mb-2">السعر</h4>
@@ -337,90 +411,113 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-md font-bold text-white mb-2">المساحة</h4>
+                    <h4 className="text-md font-bold text-white mb-2">
+                      المساحة
+                    </h4>
                     <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
                       <p className="text-gray-300">{selectedRequest.area} م²</p>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="flex flex-col h-full">
-                      <h4 className="text-md font-bold text-white mb-2">النوع</h4>
-                      <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 flex-1">
-                        <p className="text-gray-300">{selectedRequest.type}</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col h-full">
-                      <h4 className="text-md font-bold text-white mb-2">الحالة</h4>
-                      <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 flex-1">
-                        <p className="text-gray-300">{selectedRequest.status}</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col h-full">
-                      <h4 className="text-md font-bold text-white mb-2">التشطيب</h4>
-                      <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 flex-1">
-                        <p className="text-gray-300">{selectedRequest.finish}</p>
-                      </div>
+                  <div className="flex flex-col h-full">
+                    <h4 className="text-md font-bold text-white mb-2">النوع</h4>
+                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 flex-1">
+                      <p className="text-gray-300">{selectedRequest.type}</p>
                     </div>
                   </div>
+                  <div className="flex flex-col h-full">
+                    <h4 className="text-md font-bold text-white mb-2">
+                      الحالة
+                    </h4>
+                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 flex-1">
+                      <p className="text-gray-300">{selectedRequest.status}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col h-full">
+                    <h4 className="text-md font-bold text-white mb-2">
+                      التشطيب
+                    </h4>
+                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 flex-1">
+                      <p className="text-gray-300">{selectedRequest.finish}</p>
+                    </div>
+                  </div>
+                </div>
 
-                
                 {(selectedRequest.bedrooms || selectedRequest.bathrooms) && (
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     {selectedRequest.bedrooms && (
                       <div>
-                        <h4 className="text-md font-bold text-white mb-2">عدد الغرف</h4>
+                        <h4 className="text-md font-bold text-white mb-2">
+                          عدد الغرف
+                        </h4>
                         <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                          <p className="text-gray-300">{selectedRequest.bedrooms}</p>
+                          <p className="text-gray-300">
+                            {selectedRequest.bedrooms}
+                          </p>
                         </div>
                       </div>
                     )}
                     {selectedRequest.bathrooms && (
                       <div>
-                        <h4 className="text-md font-bold text-white mb-2">عدد الحمامات</h4>
+                        <h4 className="text-md font-bold text-white mb-2">
+                          عدد الحمامات
+                        </h4>
                         <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                          <p className="text-gray-300">{selectedRequest.bathrooms}</p>
+                          <p className="text-gray-300">
+                            {selectedRequest.bathrooms}
+                          </p>
                         </div>
                       </div>
                     )}
                   </div>
                 )}
-                
+
                 {/* 🔹 قسم عرض الكلمات المفتاحية */}
                 <div className="mb-6">
-                  <h4 className="text-md font-bold text-white mb-2">الكلمات المفتاحية</h4>
+                  <h4 className="text-md font-bold text-white mb-2">
+                    الكلمات المفتاحية
+                  </h4>
                   <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
                     {renderKeywords()}
                   </div>
                 </div>
-                
+
                 {/* 🔹 قسم عرض خطة العرض */}
                 <div className="mb-6">
-                  <h4 className="text-md font-bold text-white mb-2">خطة العرض</h4>
+                  <h4 className="text-md font-bold text-white mb-2">
+                    خطة العرض
+                  </h4>
                   <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
                     {selectedRequest.listingPlane ? (
-                      <p className="text-gray-300">{selectedRequest.listingPlane}</p>
+                      <p className="text-gray-300">
+                        {selectedRequest.listingPlane}
+                      </p>
                     ) : (
-                      <p className="text-gray-500 italic">لا توجد خطة عرض محددة</p>
+                      <p className="text-gray-500 italic">
+                        لا توجد خطة عرض محددة
+                      </p>
                     )}
                   </div>
                 </div>
-                
+
                 <div className="mb-6">
                   <h4 className="text-md font-bold text-white mb-2">العنوان</h4>
                   <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
                     <p className="text-gray-300">{selectedRequest.address}</p>
                   </div>
                 </div>
-                
+
                 {selectedRequest.googleMapsUrl && (
                   <div className="mb-6">
-                    <h4 className="text-md font-bold text-white mb-2">رابط خرائط جوجل</h4>
+                    <h4 className="text-md font-bold text-white mb-2">
+                      رابط خرائط جوجل
+                    </h4>
                     <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                      <a 
-                        href={selectedRequest.googleMapsUrl} 
-                        target="_blank" 
+                      <a
+                        href={selectedRequest.googleMapsUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-400 hover:text-blue-300"
                       >
@@ -429,18 +526,26 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
                     </div>
                   </div>
                 )}
-                
+
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div>
-                    <h4 className="text-md font-bold text-white mb-2">تاريخ الطلب</h4>
+                    <h4 className="text-md font-bold text-white mb-2">
+                      تاريخ الطلب
+                    </h4>
                     <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                      <p className="text-gray-300">{selectedRequest.requestDate}</p>
+                      <p className="text-gray-300">
+                        {selectedRequest.requestDate}
+                      </p>
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-md font-bold text-white mb-2">تاريخ انتهاء العرض</h4>
+                    <h4 className="text-md font-bold text-white mb-2">
+                      تاريخ انتهاء العرض
+                    </h4>
                     <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                      <p className="text-gray-300">{selectedRequest.listingEndDate}</p>
+                      <p className="text-gray-300">
+                        {selectedRequest.listingEndDate}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -455,10 +560,10 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
           )}
         </div>
       </div>
-      
+
       {/* 🔹 نافذة الصورة المكبرة */}
       {enlargedImage && selectedRequest && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
           onClick={closeEnlargedImage}
         >
@@ -470,11 +575,22 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
                 closeEnlargedImage();
               }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
-            
+
             {/* أزرار التنقل بين الصور */}
             {selectedRequest.gallery && selectedRequest.gallery.length > 1 && (
               <>
@@ -482,45 +598,66 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
                   className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-full p-2 z-10 transition-all"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigateImage('prev');
+                    navigateImage("prev");
                   }}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
                   </svg>
                 </button>
                 <button
                   className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-full p-2 z-10 transition-all"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigateImage('next');
+                    navigateImage("next");
                   }}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
                   </svg>
                 </button>
               </>
             )}
-            
-            <img 
-              src={enlargedImage} 
-              alt="صورة مكبرة" 
+
+            <img
+              src={enlargedImage}
+              alt="صورة مكبرة"
               className="max-w-full max-h-[90vh] object-contain rounded-lg"
             />
-            
+
             {/* معلومات الصورة الحالية */}
             {selectedRequest.gallery && selectedRequest.gallery.length > 1 && (
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white text-sm px-3 py-1 rounded-full">
                 صورة {currentImageIndex + 1} من {selectedRequest.gallery.length}
               </div>
             )}
-            
           </div>
         </div>
       )}
     </>
   );
-}
+};
 
 export default PropertyRequestsPage;

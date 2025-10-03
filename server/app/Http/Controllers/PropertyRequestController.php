@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+
 
 class PropertyRequestController extends Controller
 {
@@ -31,6 +33,23 @@ class PropertyRequestController extends Controller
         // لا حاجة لتعديل المسار لأننا نخزن المسار الكامل بالفعل
         return url('storage/' . $path);
     }
+    private function getPropertyVideos($propertyId)
+    {
+        // جلب فيديوهات العقار من جدول property_videos
+        return DB::table('property_videos')
+            ->select('id', 'property_id', 'video_url', 'thumbnail_url')
+            ->where('property_id', $propertyId)
+            ->get()
+            ->map(function ($video) {
+                // thumbnail_url قد يكون null أو رابط نسبي
+                if ($video->thumbnail_url && !preg_match('#^https?://#', $video->thumbnail_url)) {
+                    $video->thumbnail_url = url('storage/' . $video->thumbnail_url);
+                }
+                return $video;
+            })
+            ->values();
+    }
+
 
         public function index(Request $request)
     {
@@ -61,6 +80,10 @@ class PropertyRequestController extends Controller
                 return $image;
             });
         }
+
+        // إضافة الفيديوهات
+        $property->videos = $this->getPropertyVideos($property->id);
+
         return $property;
     });
 
@@ -93,6 +116,8 @@ public function approve($id)
             return $image;
         });
     }
+        // إضافة الفيديوهات
+        $property->videos = $this->getPropertyVideos($property->id);
 
     return response()->json(['property' => $property]);
 }
@@ -199,6 +224,10 @@ public function approve($id)
         'area' => 'sometimes|numeric|min:0',
         'bedrooms' => 'nullable|integer|min:0',
         'bathrooms' => 'nullable|integer|min:0',
+        // New videos field
+        'videos' => 'nullable|array',
+        'videos.*.video_url' => 'required_with:videos|string|max:255',
+        'videos.*.thumbnail_url' => 'required_with:videos|string|max:255',
     ])->validate();
 
     $property->update(array_merge(
@@ -242,6 +271,27 @@ public function approve($id)
             }
         }
     }
+    
+
+    // تحديث الفيديوهات: احذف جميع الفيديوهات القديمة وأضف فقط الفيديوهات المرسلة مع الطلب
+    if ($request->has('videos') && is_array($request->videos)) {
+        // حذف جميع الفيديوهات القديمة لهذا العقار
+        \DB::table('property_videos')->where('property_id', $property->id)->delete();
+
+        // إضافة الفيديوهات الجديدة
+        foreach ($request->videos as $video) {
+            if (
+                isset($video['video_url']) && !empty($video['video_url']) &&
+                isset($video['thumbnail_url']) && !empty($video['thumbnail_url'])
+            ) {
+                \DB::table('property_videos')->insert([
+                    'property_id' => $property->id,
+                    'video_url' => $video['video_url'],
+                    'thumbnail_url' => $video['thumbnail_url'],
+                ]);
+            }
+        }
+    }
 
     // تحميل الصور وتحويل الروابط
     $property->load('images');
@@ -252,8 +302,10 @@ public function approve($id)
             $image->medium_url = $this->getFullImageUrl($image->medium_url);
             return $image;
         });
-    }
+    } 
 
+    // تحميل الفيديوهات من جدول property_videos
+    $property->videos = $this->getPropertyVideos($property->id);
     return response()->json(['property' => $property]);
 }
 
@@ -285,6 +337,11 @@ public function approve($id)
         'imagesData.*.isFeatured' => 'nullable|boolean',
         'imagesData.*.altText' => 'nullable|string|max:255',
         'imagesData.*.caption' => 'nullable|string|max:255',
+        // New videos field
+        'videos' => 'nullable|array',
+        'videos.*.video_url' => 'required_with:videos|string|max:255',
+        'videos.*.thumbnail_url' => 'required_with:videos|string|max:255',
+    
     ]);
 
     if ($validator->fails()) {
@@ -349,6 +406,7 @@ public function approve($id)
         'requested_at' => 'required|date',
         'keywords' => 'nullable|string',
         'listing_end_date' => 'nullable|date'
+                
     ])->validate();
 
     $property = Property::create($validatedProperty);
@@ -366,7 +424,25 @@ public function approve($id)
         }
     }
 
-    // تحميل الصور وتحويل الروابط
+ 
+    // إضافة الفيديوهات إلى جدول property_videos
+    if ($request->has('videos') && is_array($request->videos)) {
+        foreach ($request->videos as $video) {
+            // تأكد من وجود الحقول المطلوبة
+            if (
+                isset($video['video_url']) && !empty($video['video_url']) &&
+                isset($video['thumbnail_url']) && !empty($video['thumbnail_url'])
+            ) {
+                \DB::table('property_videos')->insert([
+                    'property_id' => $property->id,
+                    'video_url' => $video['video_url'],
+                    'thumbnail_url' => $video['thumbnail_url'], 
+                ]);
+            }
+        }
+    }
+
+            // تحميل الصور وتحويل الروابط
     $property->load('images');
     if ($property->images) {
         $property->images->transform(function ($image) {
@@ -376,6 +452,8 @@ public function approve($id)
             return $image;
         });
     }
+    // تحميل الفيديوهات من جدول property_videos
+    $property->videos = $this->getPropertyVideos($property->id);
 
     return response()->json([
         'message' => 'Property request created successfully',

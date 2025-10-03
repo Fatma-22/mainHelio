@@ -7,6 +7,7 @@ import { createProperty } from "../services/propertyService";
 import ImageUploader from "./ImageUploader";
 import { ImageItem } from "../types";
 import { useAlert } from "../hooks/userAlert";
+import PropertyVideoManager from "./PropertyVideoManager";
 
 // Initialize the AI client once
 const ai = new GoogleGenAI({
@@ -40,6 +41,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     listingPlan: "",
     status: "",
     finish: "",
+    videos: [],
   });
 
   const [images, setImages] = useState<ImageItem[]>([]);
@@ -92,7 +94,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
    * - keywords: string (optional)
    * - listingPlan: string (enum: "paid", "commission")
    * - status: string (enum, required, with special logic for "ارض")
-   * - finish: string (required for "شقة"/"فيلا" + "للبيع")
+   * - finish: string (required for "شقة"/"فيلا")
    * all required but ownerEmail, mapLocation
    */
   const validateForm = () => {
@@ -182,24 +184,27 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         newErrors.bathrooms = errorMessages.bathroomsInvalid;
       }
     } else {
-      // For other types, bedrooms and bathrooms are required as well
-      if (typeof formData.bedrooms !== "string" || !formData.bedrooms) {
-        newErrors.bedrooms = errorMessages.bedroomsRequired;
-      } else if (
-        isNaN(Number(formData.bedrooms)) ||
-        !Number.isInteger(Number(formData.bedrooms)) ||
-        Number(formData.bedrooms) < 0
-      ) {
-        newErrors.bedrooms = errorMessages.bedroomsInvalid;
+      // For other types, bedrooms and bathrooms are not required,
+      // but if provided, must be a non-negative integer
+      // newErrors.bathrooms = undefined;
+      // newErrors.bedrooms = undefined;
+      if (typeof formData.bedrooms === "string" && formData.bedrooms !== "") {
+        if (
+          isNaN(Number(formData.bedrooms)) ||
+          !Number.isInteger(Number(formData.bedrooms)) ||
+          Number(formData.bedrooms) < 0
+        ) {
+          newErrors.bedrooms = errorMessages.bedroomsInvalid;
+        }
       }
-      if (typeof formData.bathrooms !== "string" || !formData.bathrooms) {
-        newErrors.bathrooms = errorMessages.bathroomsRequired;
-      } else if (
-        isNaN(Number(formData.bathrooms)) ||
-        !Number.isInteger(Number(formData.bathrooms)) ||
-        Number(formData.bathrooms) < 0
-      ) {
-        newErrors.bathrooms = errorMessages.bathroomsInvalid;
+      if (typeof formData.bathrooms === "string" && formData.bathrooms !== "") {
+        if (
+          isNaN(Number(formData.bathrooms)) ||
+          !Number.isInteger(Number(formData.bathrooms)) ||
+          Number(formData.bathrooms) < 0
+        ) {
+          newErrors.bathrooms = errorMessages.bathroomsInvalid;
+        }
       }
     }
 
@@ -247,16 +252,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       newErrors.images = "يجب رفع صورة واحدة على الأقل للعقار";
     }
 
-    // finish: string (required for "شقة"/"فيلا" + "للبيع")
-    if (
-      formData.status === "للبيع" &&
-      (formData.type === "شقة" || formData.type === "فيلا")
-    ) {
-      if (typeof formData.finish !== "string" || !formData.finish) {
-        newErrors.finish = errorMessages.finishRequired;
-      }
-    } else {
-      // For other types, finish is required as well
+    // finish: string (required for "شقة"/"فيلا")
+    if (formData.type === "شقة" || formData.type === "فيلا") {
       if (typeof formData.finish !== "string" || !formData.finish) {
         newErrors.finish = errorMessages.finishRequired;
       }
@@ -301,6 +298,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       });
     }
   };
+
+  console.log({ errors });
 
   const handleGenerateDescription = async () => {
     if (!formData.type || !formData.area || !formData.keywords) {
@@ -431,31 +430,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-8">
-          {isSubmitting && (
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] z-20 flex items-center justify-center">
-              <div className="flex items-center gap-3 text-gray-200">
-                <svg
-                  className="animate-spin h-5 w-5 text-amber-400"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                  ></path>
-                </svg>
-                <span>{t.submitting}</span>
-              </div>
-            </div>
-          )}
           <button
             onClick={handleClose}
             className={`absolute top-4 ${
@@ -856,6 +830,15 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 </div>
               </div>
 
+              <div className="mt-6">
+                <PropertyVideoManager
+                  loading={isSubmitting}
+                  initialVideos={formData?.videos ?? []}
+                  onVideosChange={(videos) => {
+                    setFormData({ ...formData, videos });
+                  }}
+                />
+              </div>
               <div className="p-4 mt-4 bg-blue-900/20 border border-blue-700 rounded-lg space-y-2">
                 <div className="flex items-center gap-2 mb-2">
                   <svg

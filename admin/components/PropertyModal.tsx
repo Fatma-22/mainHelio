@@ -7,6 +7,7 @@ import type {
   Property,
 } from "../types";
 import ImageUploader from "./ImageUploader";
+import PropertyVideoManager from "./PropertyVideoManager";
 import { ImageItem } from "../types";
 
 interface PropertyModalProps {
@@ -46,6 +47,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
     finish: "" as PropertyFinish | "",
     keywords: "",
     listing_plan: "paid",
+    videos: [],
   };
 
   const [formData, setFormData] = useState(formDataInitialize);
@@ -78,6 +80,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
         finish: property.finish || "",
         keywords: property.keywords || "",
         listing_plan: (property as any).listing_plan || "paid",
+        videos: property?.videos ?? [],
       });
 
       // تحويل الصور الموجودة لـ ImageItem - هذا الجزء المهم
@@ -187,9 +190,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
     setIsSaving(true);
 
     const processedData: any = {
@@ -215,6 +216,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
       finish: formData.finish || undefined,
       keywords: formData.keywords,
       listing_plan: formData.listing_plan,
+      videos: formData?.videos ?? [],
     };
 
     // معالجة الصور
@@ -304,31 +306,6 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
         className="bg-gray-800 rounded-xl shadow-lg p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto text-white my-8 relative"
         aria-busy={isSaving}
       >
-        {isSaving && (
-          <div className="absolute h-full inset-0 bg-black/50 backdrop-blur-[1px] flex items-center justify-center z-20">
-            <div className="flex items-center gap-3 text-gray-200">
-              <svg
-                className="animate-spin h-5 w-5 text-blue-400"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                ></path>
-              </svg>
-              <span>جارٍ الحفظ...</span>
-            </div>
-          </div>
-        )}
         {/* زر الإغلاق في الزاوية العلوية اليمنى */}
         <button
           onClick={onClose}
@@ -735,6 +712,17 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
               </p>
             )}
           </div>
+
+          <div className="mt-6">
+            <PropertyVideoManager
+              loading={isSaving}
+              initialVideos={formData?.videos ?? []}
+              onVideosChange={(videos) => {
+                setFormData({ ...formData, videos });
+              }}
+            />
+          </div>
+
           <div className="flex justify-end gap-4 pt-4">
             <button
               type="button"
