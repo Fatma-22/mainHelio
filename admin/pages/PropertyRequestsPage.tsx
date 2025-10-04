@@ -43,21 +43,21 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
       }
     });
   };
-  
+
   // دالة للحصول على رابط الصورة بشكل آمن - تعمل مع كلا النوعين
   const getImageUrl = (image: ApiImage | ImageItem): string => {
-    if ('previewUrl' in image) {
+    if ("previewUrl" in image) {
       // ImageItem
-      return image.previewUrl || image.serverUrl || '';
+      return image.previewUrl || image.serverUrl || "";
     } else {
       // ApiImage
-      return image.url || '';
+      return image.url || "";
     }
   };
-  
+
   // دالة للحصول على النص البديل للصورة بشكل آمن - تعمل مع كلا النوعين
   const getImageAlt = (image: ApiImage | ImageItem): string => {
-    if ('previewUrl' in image) {
+    if ("previewUrl" in image) {
       // ImageItem
       return image.altText || `صورة العقار`;
     } else {

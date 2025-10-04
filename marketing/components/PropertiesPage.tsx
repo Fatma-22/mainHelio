@@ -268,6 +268,53 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({
     priceRange,
   ]);
 
+  // const filteredProperties = useMemo(() => {
+  //   return properties
+  //     ?.filter((p) =>
+  //       activeTab === "buy"
+  //         ? (p as any)?.status === "For Sale" || p.status === "للبيع"
+  //         : (p as any).status === "For Rent" || p.status === "للإيجار"
+  //     )
+  //     ?.filter((p) => {
+  //       const normalizedType = normalizePropertyType(p.type);
+  //       return (
+  //         typeFilter === "all" ||
+  //         normalizedType === typeFilter ||
+  //         (typeFilter === "villa" && normalizedType === "villa") ||
+  //         (typeFilter === "فيلا" && normalizedType === "villa") ||
+  //         (typeFilter === "apartment" && normalizedType === "apartment") ||
+  //         (typeFilter === "شقة" && normalizedType === "apartment") ||
+  //         (typeFilter === "commercial" && normalizedType === "commercial") ||
+  //         (typeFilter === "تجاري" && normalizedType === "commercial") ||
+  //         (typeFilter === "land" && normalizedType === "land") ||
+  //         (typeFilter === "أرض" && normalizedType === "land")
+  //       );
+  //     })
+  //     ?.filter(
+  //       (p) =>
+  //         finishFilter === "all" || normalizeFinish(p.finish) === finishFilter
+  //     )
+  //     ?.filter(
+  //       (p) =>
+  //         !queryFilter?.trim() ||
+  //         p.title.toLowerCase().includes(queryFilter.toLowerCase()) ||
+  //         p.address.toLowerCase().includes(queryFilter.toLowerCase()) ||
+  //         (p.description &&
+  //           p.description.toLowerCase().includes(queryFilter.toLowerCase()))
+  //     )
+  //     ?.filter((p) => {
+  //       const priceNumeric = getPriceNumeric(p.price);
+
+  //       return priceNumeric >= priceRange.min && priceNumeric <= priceRange.max;
+  //     });
+  // }, [
+  //   properties,
+  //   activeTab,
+  //   typeFilter,
+  //   queryFilter,
+  //   finishFilter,
+  //   priceRange,
+  // ]);
   return (
     <div className="py-20 bg-gray-900">
       <div className="container mx-auto px-6">
@@ -288,7 +335,6 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({
           </button>
         </div>
 
-        {/* قسم الفلاتر - يتم تحميله مباشرة لأنه جزء أساسي من الصفحة */}
         <div className="mb-12 p-6 bg-gray-800 rounded-lg border border-gray-700">
           {/* تبويبات البيع والإيجار */}
           <div className="flex border-b border-gray-600 mb-6">
