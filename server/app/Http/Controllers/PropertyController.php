@@ -559,10 +559,6 @@ class PropertyController extends Controller
                 $propertyImage->url = $this->getFullImageUrl($propertyImage->url);
                 $propertyImage->thumbnail_url = $this->getFullImageUrl($propertyImage->thumbnail_url);
                 $propertyImage->medium_url = $this->getFullImageUrl($propertyImage->medium_url);
-<<<<<<< HEAD
-=======
-
->>>>>>> 061bd130e8711ab5107588a23bfc60c61bdfdc3a
                 $uploadedImages[] = $propertyImage;
             }
         }
@@ -610,10 +606,6 @@ class PropertyController extends Controller
             'property' => $property->load('amenities'),
         ]);
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> 061bd130e8711ab5107588a23bfc60c61bdfdc3a
     public function updateImageMetadata(Request $request, $propertyId, $imageId)
     {
         $property = Property::findOrFail($propertyId);
@@ -652,10 +644,6 @@ class PropertyController extends Controller
             'image' => $image,
         ]);
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> 061bd130e8711ab5107588a23bfc60c61bdfdc3a
     public function deleteImage($propertyId, $imageId)
     {
         $property = Property::findOrFail($propertyId);
