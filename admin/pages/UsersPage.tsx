@@ -1,14 +1,12 @@
-import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
-import type { AdminUser, UserRole    } from '../types';
+
+import React, { useState, useEffect } from 'react';
+import type { AdminUser, UserRole } from '../types';
 import { getStaff, createStaff, updateStaff, deleteStaff } from '../services/staffService';
-import { getRoles } from "../services/roleService"; // عندك السيرفس
+import { getRoles } from "../services/roleService";
 
-
+// تعديل الـ Props لاستقبال currentUser فقط
 export interface UsersPageProps {
-  users: AdminUser[];
-  setUsers: Dispatch<SetStateAction<AdminUser[]>>;
   showToast: (message: string, type?: 'success' | 'error') => void;
-  refreshData: () => Promise<void>;
 }
 
 const UserRoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
@@ -34,34 +32,31 @@ const roleMap: Record<number, UserRole> = {
   7: 'منسق',
 };
 
-
 const UserModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   onSave: (user: Omit<AdminUser, 'id' | 'lastLogin'> & { id?: number; password?: string }) => void;
   user: AdminUser | null;
 }> = ({ isOpen, onClose, onSave, user }) => {
-    const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     password: '',
     roleId: user?.roleId || 1, // خزن id
   });
 
-
   useEffect(() => {
-  if (user) {
-    setFormData({
-      name: user.name,
-      email: user.email,
-      roleId: user.roleId,   // الرقم
-      password: '',
-    });
-  } else {
-    setFormData({ name: '', email: '', roleId: 1, password: '' });
-  }
-}, [user]);
-
+    if (user) {
+      setFormData({
+        name: user.name,
+        email: user.email,
+        roleId: user.roleId,   // الرقم
+        password: '',
+      });
+    } else {
+      setFormData({ name: '', email: '', roleId: 1, password: '' });
+    }
+  }, [user]);
 
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
@@ -71,7 +66,7 @@ const UserModal: React.FC<{
 
   if (!isOpen) return null;
 
-const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const payload: Omit<AdminUser, "id" | "lastLogin"> & {
@@ -88,9 +83,6 @@ const handleSubmit = (e: React.FormEvent) => {
 
     onSave(payload);
   };
-
-
-
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50" role="dialog" aria-modal="true">
@@ -140,86 +132,102 @@ const handleSubmit = (e: React.FormEvent) => {
 };
 
 const UsersPage: React.FC<UsersPageProps> = ({ showToast }) => {
+  // إضافة حالة للمستخدمين داخل الصفحة
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUsers = async () => {
+      setLoading(true);
       try {
         const data = await getStaff();
         setUsers(data);
       } catch (err) {
         console.error(err);
         showToast('فشل في جلب بيانات المستخدمين', 'error');
+      } finally {
+        setLoading(false);
       }
     };
     fetchUsers();
   }, []);
 
-  const handleOpenModal = (user: AdminUser | null) => { setEditingUser(user); setIsModalOpen(true); };
-  const handleCloseModal = () => { setIsModalOpen(false); setEditingUser(null); };
+  const handleOpenModal = (user: AdminUser | null) => { 
+    setEditingUser(user); 
+    setIsModalOpen(true); 
+  };
+  
+  const handleCloseModal = () => { 
+    setIsModalOpen(false); 
+    setEditingUser(null); 
+  };
 
-const handleSaveUser = async (
-  data: Omit<AdminUser, "id" | "lastLogin"> & { id?: number; password?: string }
-) => {
-  try {
-    const payload = {
-      name: data.name,
-      email: data.email,
-      password: data.password || undefined,
-      role_id: data.roleId,
-    };
+  const handleSaveUser = async (
+    data: Omit<AdminUser, "id" | "lastLogin"> & { id?: number; password?: string }
+  ) => {
+    try {
+      const payload = {
+        name: data.name,
+        email: data.email,
+        password: data.password || undefined,
+        role_id: data.roleId,
+      };
 
-    if (data.id) {
-      // تعديل مستخدم
-      const updated = await updateStaff(data.id, payload);
-      setUsers(prev =>
-        prev.map(u =>
-          u.id === updated.id
-            ? { ...updated, role: roleMap[updated.roleId] }
-            : u
-        )
-      );
-    } else {
-      // إنشاء مستخدم جديد
-      await createStaff(payload);
+      if (data.id) {
+        // تعديل مستخدم
+        const updated = await updateStaff(data.id, payload);
+        setUsers(prev =>
+          prev.map(u =>
+            u.id === updated.id
+              ? { ...updated, role: roleMap[updated.roleId] }
+              : u
+          )
+        );
+      } else {
+        // إنشاء مستخدم جديد
+        await createStaff(payload);
 
-      // إعادة جلب كل المستخدمين بعد الإضافة
-      const freshUsers = await getStaff();
-      setUsers(freshUsers.map(u => ({ ...u, role: roleMap[u.roleId] })));
+        // إعادة جلب كل المستخدمين بعد الإضافة
+        const freshUsers = await getStaff();
+        setUsers(freshUsers.map(u => ({ ...u, role: roleMap[u.roleId] })));
+      }
+
+      setIsModalOpen(false);
+      showToast("تم حفظ المستخدم بنجاح", "success");
+    } catch (err) {
+      console.error("Error saving user:", err);
+      showToast("حدث خطأ أثناء حفظ المستخدم", "error");
     }
+  };
 
-    setIsModalOpen(false);
-    showToast("تم حفظ المستخدم بنجاح", "success");
-  } catch (err) {
-    console.error("Error saving user:", err);
-    showToast("حدث خطأ أثناء حفظ المستخدم", "error");
+  const handleDeleteUser = async (id: number) => {
+    try {
+      await deleteStaff(id);
+
+      // تحديث فوري
+      setUsers(prev => prev.filter(user => user.id !== id));
+
+      // جلب بيانات جديدة للتأكد
+      const fresh = await getStaff();
+      setUsers(fresh);
+
+      showToast("تم حذف المستخدم بنجاح", "success");
+    } catch (err) {
+      console.error(err);
+      showToast("حدث خطأ أثناء حذف المستخدم", "error");
+    }
+  };
+
+  // عرض حالة التحميل
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-xl text-white">جاري تحميل المستخدمين...</div>
+      </div>
+    );
   }
-};
-
-
-
-
-const handleDeleteUser = async (id: number) => {
-  try {
-    await deleteStaff(id);
-
-    // تحديث فوري
-    setUsers(prev => prev.filter(user => user.id !== id));
-
-    // جلب بيانات جديدة للتأكد
-    const fresh = await getStaff();
-    setUsers(fresh);
-
-    showToast("تم حذف المستخدم بنجاح", "success");
-  } catch (err) {
-    console.error(err);
-    showToast("حدث خطأ أثناء حذف المستخدم", "error");
-  }
-};
-
-
 
   return (
     <div className="space-y-6">

@@ -34,16 +34,13 @@ const HomePage: React.FC<HomePageProps> = ({
       <Hero
         language={language}
         siteContent={currentSiteContent}
-        featuredProperties={featuredProperties}
       />
-      <Services language={language} siteContent={currentSiteContent} />
-      <AboutCity language={language} siteContent={currentSiteContent} />
+      <Services siteContent={currentSiteContent} />
+      <AboutCity language={language} />
       <Integrations language={language} siteContent={currentSiteContent} />
       <SocialProof
-        language={language}
         featuredProperties={featuredProperties}
-        isLoading={isLoading}
-      />
+        isLoading={isLoading} language={"ar"}      />
       {/* <Partners language={language} />
       <WisdomQuotes language={language} /> */}
       <CTA language={language} />

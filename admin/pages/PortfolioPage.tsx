@@ -1,18 +1,16 @@
-import React, { useState, useEffect, Dispatch, SetStateAction } from "react";
-import type { PortfolioItem, DecorationRequestType } from "../types";
+import React, { useState, useEffect } from "react";
+import type { PortfolioItem, DecorationRequestType, AdminUser } from "../types";
 import {
   getPortfolioItems,
   createPortfolioItem,
   updatePortfolioItem,
   deletePortfolioItem,
 } from "../services/portfolioService";
-import ImageUploader from "../components/ImageUploader"; // Assuming this is the path to the ImageUploader component
+import ImageUploader from "../components/ImageUploader";
 
+// تعديل الـ Props لاستقبال currentUser فقط
 export interface PortfolioPageProps {
-  items: PortfolioItem[];
-  setItems: Dispatch<SetStateAction<PortfolioItem[]>>;
   showToast: (message: string, type?: "success" | "error") => void;
-  refreshData: () => Promise<void>;
 }
 
 // Tab configuration
@@ -334,23 +332,26 @@ const PortfolioItemModal: React.FC<{
   );
 };
 
-const PortfolioPage: React.FC<PortfolioPageProps> = ({
-  items,
-  setItems,
-  showToast,
-}) => {
+const PortfolioPage: React.FC<PortfolioPageProps> = ({ showToast }) => {
+  // إضافة حالة للعناصر داخل الصفحة
+  const [items, setItems] = useState<PortfolioItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
   const [activeTab, setActiveTab] =
     useState<DecorationRequestType>("منحوتات جدارية");
+  const [loading, setLoading] = useState(true);
 
   // جلب البيانات عند التحميل
   const fetchItems = async () => {
+    setLoading(true);
     try {
       const data = await getPortfolioItems();
       setItems(data);
     } catch (err) {
+      console.error(err);
       showToast("حدث خطأ أثناء جلب البيانات", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -397,23 +398,34 @@ const PortfolioPage: React.FC<PortfolioPageProps> = ({
       await fetchItems();
       handleCloseModal();
     } catch (err) {
+      console.error(err);
       showToast("حدث خطأ أثناء الحفظ", "error");
     }
   };
 
   const handleDeleteItem = async (id: number) => {
     try {
-      const data = await deletePortfolioItem(id);
+      await deletePortfolioItem(id);
       setItems(items.filter((item) => item.id !== id));
       await fetchItems();
       showToast("تم حذف العمل بنجاح", "success");
     } catch (err) {
+      console.error(err);
       showToast("حدث خطأ أثناء الحذف", "error");
     }
   };
 
   // Filter items based on active tab
   const filteredItems = items.filter((item) => item.type === activeTab);
+
+  // عرض حالة التحميل
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-xl text-white">جاري تحميل معرض الأعمال...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

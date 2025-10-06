@@ -26,8 +26,7 @@ use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PermissionController;
-use App\Http\Controllers\VimeoController;
-
+use App\Http\Controllers\DashboardController;
 // Debug route for Cloudinary configuration
 Route::get('/debug/cloudinary', function () {
     return [
@@ -120,6 +119,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/properties/requests/{id}/approve', [PropertyRequestController::class, 'approve']);
         Route::put('/properties/requests/{id}/reject', [PropertyRequestController::class, 'reject']);
         Route::put('/properties/requests/{id}/edit-publish', [PropertyRequestController::class, 'editAndPublish']);
+        Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
 
         // Properties Management
         Route::post('/properties', [PropertyController::class, 'store']);

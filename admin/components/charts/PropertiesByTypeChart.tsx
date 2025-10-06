@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recha
 import type { Property, PropertyType } from '../../types';
 
 interface PropertiesByTypeChartProps {
-    properties: Property[];
+  propertiesByType: { type: string; count: number }[];
 }
 
 const COLORS: Record<PropertyType, string> = {
@@ -14,16 +14,13 @@ const COLORS: Record<PropertyType, string> = {
 };
 
 
-const PropertiesByTypeChart: React.FC<PropertiesByTypeChartProps> = ({ properties }) => {
+const PropertiesByTypeChart: React.FC<PropertiesByTypeChartProps> = ({ propertiesByType }) => {
     const processData = () => {
-        const typeCounts = properties.reduce((acc, property) => {
-            acc[property.type] = (acc[property.type] || 0) + 1;
-            return acc;
-        }, {} as Record<Property['type'], number>);
-
-        return Object.entries(typeCounts).map(([name, value]) => ({ name: name as PropertyType, value }));
-    };
-
+  return propertiesByType.map(item => ({
+    name: item.type as PropertyType,
+    value: item.count
+  }));
+};
     const data = processData();
     
     if (data.length === 0) {

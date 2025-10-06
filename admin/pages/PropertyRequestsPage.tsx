@@ -1,47 +1,41 @@
-import React, { useState, useEffect } from "react";
-import type { PropertyRequest, Property, ImageItem, ApiImage } from "../types";
-import PropertyModal from "../components/PropertyModal";
-import { exportToCSV } from "../utils/export";
-import { ICONS } from "../constants";
-import {
-  mapApiImageToImageItem,
-  mapImageItemToApiImage,
-} from "../services/mappers";
-import { InboxIcon } from "@heroicons/react/24/outline";
+import React, { useState, useEffect } from 'react';
+import type { PropertyRequest, Property, ImageItem, ApiImage, AdminUser } from '../types';
+import PropertyModal from '../components/PropertyModal';
+import { exportToCSV } from '../utils/export';
+import { ICONS } from '../constants';
+import { mapApiImageToImageItem, mapImageItemToApiImage } from "../services/mappers";
+import { getPropertyRequests } from '../services/propertyRequestService';
 
+// تعديل الـ Props لاستقبال currentUser فقط
 export interface PropertyRequestsPageProps {
-  requests: PropertyRequest[];
   onApprove: (request: PropertyRequest) => Promise<void>;
   onReject: (requestId: number) => Promise<void>;
-  onEditAndApprove: (
-    editedPropertyData: Omit<PropertyRequest, "id" | "imageUrl" | "addedDate">,
-    originalRequestId: number
-  ) => Promise<void>;
-  showToast: (message: string, type?: "success" | "error") => void;
+  onEditAndApprove: (editedPropertyData: Omit<PropertyRequest, 'id' | 'imageUrl' | 'addedDate'>, originalRequestId: number) => Promise<void>;
+  showToast: (message: string, type?: 'success' | 'error') => void;
 }
 
 const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
-  requests,
   onApprove,
   onReject,
   onEditAndApprove,
-  showToast,
+  showToast
 }) => {
-  const [selectedRequest, setSelectedRequest] =
-    useState<PropertyRequest | null>(null);
+  // إضافة حالة للطلبات داخل الصفحة
+  const [requests, setRequests] = useState<PropertyRequest[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<PropertyRequest | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-
+  // إضافة حالة للتحميل
+  const [loading, setLoading] = useState(true);
+  
   // دالة مساعدة لتحويل الصور بشكل آمن
-  const convertGalleryToImageItems = (
-    gallery: ApiImage[] | ImageItem[] | undefined
-  ): ImageItem[] => {
+  const convertGalleryToImageItems = (gallery: ApiImage[] | ImageItem[] | undefined): ImageItem[] => {
     if (!gallery) return [];
-
-    return gallery.map((img) => {
+    
+    return gallery.map(img => {
       // تحقق إذا كان الكائن لديه خاصية previewUrl (يعني أنه ImageItem)
-      if ("previewUrl" in img) {
+      if ('previewUrl' in img) {
         return img as ImageItem;
       } else {
         // تحويل من ApiImage إلى ImageItem
@@ -82,20 +76,35 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
       return image.isfeatured === 1;
     }
   };
-
-  // Synchronize selectedRequest when requests change
-  useEffect(() => {
-    if (requests.length > 0) {
-      const first = {
-        ...requests[0],
-        gallery: convertGalleryToImageItems(requests[0].gallery),
-      };
-      setSelectedRequest(first);
-    } else {
-      setSelectedRequest(null);
+  
+  // دالة لتحميل بيانات الطلبات
+  const loadRequests = async () => {
+    setLoading(true);
+    try {
+      const data = await getPropertyRequests();
+      setRequests(data);
+      if (data.length > 0) {
+        const first = {
+          ...data[0],
+          gallery: convertGalleryToImageItems(data[0].gallery)
+        };
+        setSelectedRequest(first);
+      } else {
+        setSelectedRequest(null);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast?.('حدث خطأ أثناء جلب طلبات العقارات', 'error');
+    } finally {
+      setLoading(false);
     }
-  }, [requests]);
-
+  };
+  
+  // تحميل البيانات عند تحميل الصفحة
+  useEffect(() => {
+    loadRequests();
+  }, []);
+  
   // Open modal for editing
   const handleEditClick = () => {
     if (selectedRequest) setIsModalOpen(true);
@@ -217,6 +226,15 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
       </div>
     );
   };
+
+  // عرض حالة التحميل
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-xl text-white">جاري تحميل طلبات العقارات...</div>
+      </div>
+    );
+  }
 
   return (
     <>

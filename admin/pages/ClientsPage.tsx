@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Client } from '../types';
+import type { Client, AdminUser } from '../types';
 import { exportToCSV } from '../utils/export';
 import { ICONS } from '../constants';
 import { getCustomers, addCustomer, updateCustomer, deleteCustomer } from '../services/customerService';
-// types.ts أو داخل component
+
+// تعديل الـ Props لاستقبال currentUser فقط
 export interface ClientsPageProps {
-  clients: Client[];
-  setClients: React.Dispatch<React.SetStateAction<Client[]>>;
   showToast: (message: string, type?: 'success' | 'error') => void;
-  refreshData: () => Promise<void>;
 }
 
 const ClientModal: React.FC<{
@@ -24,19 +22,18 @@ const ClientModal: React.FC<{
     notes: '',
   });
 
-useEffect(() => {
-  if (client) {
-    setFormData({ 
-      name: client.name, 
-      phone: client.phone, 
-      email: client.email || '', 
-      notes: client.notes || '' 
-    });
-  } else {
-    setFormData({ name: '', phone: '', email: '', notes: '' });
-  }
-}, [client]);
-
+  useEffect(() => {
+    if (client) {
+      setFormData({ 
+        name: client.name, 
+        phone: client.phone, 
+        email: client.email || '', 
+        notes: client.notes || '' 
+      });
+    } else {
+      setFormData({ name: '', phone: '', email: '', notes: '' });
+    }
+  }, [client]);
 
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
@@ -87,21 +84,27 @@ useEffect(() => {
 };
 
 const ClientsPage: React.FC<ClientsPageProps> = ({ showToast }) => {
+  // إضافة حالة للعملاء داخل الصفحة
   const [clients, setClients] = useState<Client[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  // إضافة حالة للتحميل
+  const [loading, setLoading] = useState(true);
 
-const refreshData = async () => {
-  try {
-    const data = await getCustomers();
-    console.log(data)
-    setClients(data);
-  } catch (err) {
-    console.error(err);
-    showToast?.('حدث خطأ أثناء جلب العملاء', 'error');
-  }
-};
+  // تعديل دالة تحديث البيانات
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const data = await getCustomers();
+      setClients(data);
+    } catch (err) {
+      console.error(err);
+      showToast?.('حدث خطأ أثناء جلب العملاء', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     refreshData();
@@ -125,45 +128,51 @@ const refreshData = async () => {
     setEditingClient(null);
   };
 
-const handleSaveClient = async (data: Omit<Client, 'id' | 'firstContact'> & { id?: number }) => {
-  try {
-    // إضافة نوع العميل لو مش محدد
-    const payload = {
-      ...data,
-      type: (data as any).type || 'buyer', // default 'buyer'
-    };
+  const handleSaveClient = async (data: Omit<Client, 'id' | 'firstContact'> & { id?: number }) => {
+    try {
+      // إضافة نوع العميل لو مش محدد
+      const payload = {
+        ...data,
+        type: (data as any).type || 'buyer', // default 'buyer'
+      };
 
-    if (payload.id) {
-      const updatedClient = await updateCustomer(payload.id, payload);
-      setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c));
-      showToast?.('تم تعديل العميل بنجاح', 'success');
-    } else {
-      const newClient = await addCustomer(payload);
-      setClients([newClient, ...clients]);
-      showToast?.('تم إضافة العميل بنجاح', 'success');
+      if (payload.id) {
+        const updatedClient = await updateCustomer(payload.id, payload);
+        setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c));
+        showToast?.('تم تعديل العميل بنجاح', 'success');
+      } else {
+        const newClient = await addCustomer(payload);
+        setClients([newClient, ...clients]);
+        showToast?.('تم إضافة العميل بنجاح', 'success');
+      }
+      handleCloseModal();
+    } catch (error) {
+      console.error(error);
+      showToast?.('حدث خطأ أثناء حفظ العميل', 'error');
     }
-    handleCloseModal();
-  } catch (error) {
-    console.error(error);
-    showToast?.('حدث خطأ أثناء حفظ العميل', 'error');
-  }
-};
-
-
+  };
 
   const handleDeleteClient = async (id: number) => {
-  try {
-    await deleteCustomer(id);
-    setClients(clients.filter(c => c.id !== id));
-    showToast?.('تم حذف العميل بنجاح', 'success');
-  } catch (error) {
-    console.error(error);
-    showToast?.('حدث خطأ أثناء حذف العميل', 'error');
-  }
-};
-
+    try {
+      await deleteCustomer(id);
+      setClients(clients.filter(c => c.id !== id));
+      showToast?.('تم حذف العميل بنجاح', 'success');
+    } catch (error) {
+      console.error(error);
+      showToast?.('حدث خطأ أثناء حذف العميل', 'error');
+    }
+  };
 
   const handleExport = () => exportToCSV(filteredClients, 'clients.csv');
+
+  // إضافة عرض حالة التحميل
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-xl text-white">جاري تحميل العملاء...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -1,14 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import type { Inquiry, InquiryStatus } from '../types';
+// src/pages/InquiriesPage.tsx
+
+import React, { useState, useEffect, useMemo } from 'react';
+import type { Inquiry, InquiryStatus, AdminUser } from '../types';
 import { exportToCSV } from '../utils/export';
 import { ICONS } from '../constants';
-import { updateInquiry } from '../services/inquiryService';
+import { getInquiries, updateInquiry } from '../services/inquiryService';
 
 export interface InquiriesPageProps {
-  inquiries: Inquiry[];
-  setInquiries: React.Dispatch<React.SetStateAction<Inquiry[]>>;
   showToast: (message: string, type?: 'success' | 'error') => void;
-  refreshData: () => Promise<void>;
 }
 
 const InquiryStatusBadge: React.FC<{ status: Inquiry['status'] }> = ({ status }) => {
@@ -27,12 +26,36 @@ const InquiryStatusBadge: React.FC<{ status: Inquiry['status'] }> = ({ status })
   }
 };
 
-const InquiriesPage: React.FC<InquiriesPageProps> = ({ inquiries, setInquiries, showToast, refreshData }) => {
-  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(inquiries[0] || null);
+const InquiriesPage: React.FC<InquiriesPageProps> = ({ showToast }) => {
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [filters, setFilters] = useState({ status: 'الكل', type: 'الكل' });
   const [noteInput, setNoteInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<InquiryStatus>(inquiries[0]?.status || 'جديد');
+  const [dataLoading, setDataLoading] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<InquiryStatus>('جديد');
+  
+  // تحميل البيانات عند تحميل الصفحة
+  useEffect(() => {
+    const loadInquiries = async () => {
+      setDataLoading(true);
+      try {
+        const data = await getInquiries();
+        setInquiries(data);
+        if (data.length > 0) {
+          setSelectedInquiry(data[0]);
+          setSelectedStatus(data[0].status);
+        }
+      } catch (error) {
+        console.error('Error loading inquiries:', error);
+        showToast('حدث خطأ أثناء تحميل الاستفسارات', 'error');
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    loadInquiries();
+  }, [showToast]);
   
   const filteredInquiries = useMemo(() => {
     return inquiries.filter(inquiry => {
@@ -51,7 +74,6 @@ const InquiriesPage: React.FC<InquiriesPageProps> = ({ inquiries, setInquiries, 
     setNoteInput('');
   };
   
-  // دمج تغيير الحالة مع إضافة الملاحظة
   const handleAddNoteWithStatus = async () => {
     if (!selectedInquiry || !noteInput.trim()) {
       showToast('يجب إضافة ملاحظة قبل تحديث الحالة', 'error');
@@ -65,13 +87,11 @@ const InquiriesPage: React.FC<InquiriesPageProps> = ({ inquiries, setInquiries, 
       : newNote;
     
     try {
-      // تحديث الحالة والملاحظات معاً
-      const updated = await updateInquiry(selectedInquiry.id, { 
+      await updateInquiry(selectedInquiry.id, { 
         status: selectedStatus, 
         notes: updatedNotes 
       });
       
-      // تحديث الحالة محلياً
       setInquiries((prev) =>
         prev.map((inq) =>
           inq.id === selectedInquiry.id ? { ...inq, status: selectedStatus, notes: updatedNotes } : inq
@@ -93,13 +113,19 @@ const InquiriesPage: React.FC<InquiriesPageProps> = ({ inquiries, setInquiries, 
     exportToCSV(filteredInquiries, 'inquiries.csv');
   };
   
-  // دالة لحساب عدد الملاحظات
   const getNotesCount = (notes: string | undefined): number => {
     if (!notes || notes.trim() === '') return 0;
-    // تقسيم الملاحظات على الفاصل "---" الذي يفصل بين الملاحظات
     const notesArray = notes.split('---').filter(note => note.trim() !== '');
     return notesArray.length;
   };
+
+  if (dataLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-xl text-white">جاري تحميل البيانات...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-60px)] bg-gray-800 rounded-xl shadow-lg overflow-hidden">

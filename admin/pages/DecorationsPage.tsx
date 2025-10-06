@@ -3,6 +3,7 @@ import type {
   DecorationRequest,
   DecorationRequestStatus,
   PortfolioItem,
+  AdminUser
 } from "../types";
 import { exportToCSV } from "../utils/export";
 import { ICONS } from "../constants";
@@ -11,12 +12,9 @@ import {
   updateDecorRequest,
 } from "../services/decorRequestService";
 
+// تعديل الـ Props لاستقبال currentUser فقط
 export interface DecorationsPageProps {
-  requests: DecorationRequest[];
-  setRequests: React.Dispatch<React.SetStateAction<DecorationRequest[]>>;
-  portfolioItems: PortfolioItem[];
   showToast: (message: string, type?: "success" | "error") => void;
-  refreshData: () => Promise<void>;
 }
 
 const StatusBadge: React.FC<{ status: DecorationRequestStatus }> = ({
@@ -68,23 +66,26 @@ const DecorRequestsPage: React.FC<DecorationsPageProps> = ({ showToast }) => {
   const [selectedStatus, setSelectedStatus] =
     useState<DecorationRequestStatus>("جديد");
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null); // حالة للصورة المكبرة
 
   // 🔹 جلب البيانات
   const fetchData = async () => {
-    setLoading(true);
+    setDataLoading(true);
     try {
       const data = await getDecorRequests();
       setRequests(data);
-      if (!selectedRequest && data.length > 0) {
+      if (data.length > 0) {
         setSelectedRequest(data[0]);
         setSelectedStatus(data[0].status);
+      } else {
+        setSelectedRequest(null);
       }
     } catch (error) {
       console.error("فشل في جلب الطلبات:", error);
       showToast("فشل في جلب البيانات", "error");
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
@@ -179,6 +180,15 @@ const DecorRequestsPage: React.FC<DecorationsPageProps> = ({ showToast }) => {
   const closeEnlargedImage = () => {
     setEnlargedImage(null);
   };
+
+  // عرض حالة التحميل
+  if (dataLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-xl text-white">جاري تحميل طلبات الديكورات...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-60px)] bg-gray-800 rounded-xl shadow-lg overflow-hidden">

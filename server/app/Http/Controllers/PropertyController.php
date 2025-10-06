@@ -51,7 +51,6 @@ class PropertyController extends Controller
     {
         $query = Property::with(['images', 'amenities', 'staff'])
             ->where('is_published', true);
-
         // filters
         if ($request->has('type')) $query->where('type', $request->type);
         if ($request->has('status')) $query->where('status', $request->status);
@@ -82,7 +81,6 @@ class PropertyController extends Controller
                 return response()->noContent(304);
             }
         }
-
         $properties->transform(function ($property) {
             if ($property->images) {
                 $property->images->transform(function ($image) {
@@ -561,7 +559,6 @@ class PropertyController extends Controller
                 $propertyImage->url = $this->getFullImageUrl($propertyImage->url);
                 $propertyImage->thumbnail_url = $this->getFullImageUrl($propertyImage->thumbnail_url);
                 $propertyImage->medium_url = $this->getFullImageUrl($propertyImage->medium_url);
-
                 $uploadedImages[] = $propertyImage;
             }
         }
@@ -609,7 +606,6 @@ class PropertyController extends Controller
             'property' => $property->load('amenities'),
         ]);
     }
-
     public function updateImageMetadata(Request $request, $propertyId, $imageId)
     {
         $property = Property::findOrFail($propertyId);
@@ -648,7 +644,6 @@ class PropertyController extends Controller
             'image' => $image,
         ]);
     }
-
     public function deleteImage($propertyId, $imageId)
     {
         $property = Property::findOrFail($propertyId);

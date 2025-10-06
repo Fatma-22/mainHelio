@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import type { SiteContent, Testimonial, ServiceItem, AboutPoint } from '../types';
+import type { SiteContent, Testimonial, ServiceItem, AboutPoint, AdminUser } from '../types';
 import { getSiteContent, updateSiteContent } from '../services/siteContentService';
 
+// تعديل الـ Props لاستقبال currentUser فقط
 interface ContentManagementPageProps {
   showToast: (message: string, type?: 'success' | 'error') => void;
-    content: SiteContent | null; 
-    refreshData: () => void;
-    setContent: React.Dispatch<React.SetStateAction<SiteContent>>;
-
-
 }
 
 const AccordionSection: React.FC<{
@@ -81,13 +77,16 @@ const TestimonialModal: React.FC<{
 };
 
 const ContentManagementPage: React.FC<ContentManagementPageProps> = ({ showToast }) => {
+  // إضافة حالة للمحتوى داخل الصفحة
   const [formData, setFormData] = useState<SiteContent | null>(null);
   const [openSection, setOpenSection] = useState<string | null>('contact');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchContent = async () => {
+      setLoading(true);
       try {
         const data = await getSiteContent();
         const normalizedData: SiteContent = {
@@ -128,11 +127,22 @@ const ContentManagementPage: React.FC<ContentManagementPageProps> = ({ showToast
         };
         setFormData(normalizedData);
       } catch (err) {
+        console.error(err);
         showToast('حدث خطأ أثناء جلب المحتوى', 'error');
+      } finally {
+        setLoading(false);
       }
     };
     fetchContent();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-xl text-white">جاري تحميل إدارة المحتوى...</div>
+      </div>
+    );
+  }
 
   if (!formData) return <div>جارٍ التحميل...</div>;
 
@@ -191,6 +201,7 @@ const ContentManagementPage: React.FC<ContentManagementPageProps> = ({ showToast
       setFormData(updatedContent);
       showToast('تم حذف الشهادة بنجاح', 'success');
     } catch (err) {
+      console.error(err);
       showToast('حدث خطأ أثناء الحذف', 'error');
     }
   };
@@ -213,6 +224,7 @@ const ContentManagementPage: React.FC<ContentManagementPageProps> = ({ showToast
       setIsModalOpen(false);
       showToast('تم حفظ شهادة العميل بنجاح', 'success');
     } catch (err) {
+      console.error(err);
       showToast('حدث خطأ أثناء الحفظ', 'error');
     }
   };
@@ -223,6 +235,7 @@ const ContentManagementPage: React.FC<ContentManagementPageProps> = ({ showToast
       setFormData(updated);
       showToast('تم حفظ التغييرات بنجاح', 'success');
     } catch (err) {
+      console.error(err);
       showToast('حدث خطأ أثناء الحفظ', 'error');
     }
   };

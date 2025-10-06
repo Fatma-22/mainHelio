@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import FeatureSection from './FeatureSection';
 import PropertyCardSkeleton from './shared/PropertyCardSkeleton';
-import type { Property } from '../data/properties';
+import type { Property } from '../types';
 import type { Language } from '../App';
 import { translations } from '../data/translations';
 
@@ -35,7 +35,11 @@ const SocialProof: React.FC<SocialProofProps> = ({
             Array.from({ length: 4 }).map((_, index) => <PropertyCardSkeleton key={index} />)
           ) : (
             featuredProperties.map((prop) => (
-              <FeatureSection key={prop.id} {...prop} language={language} />
+              <FeatureSection 
+              key={prop.id}
+              {...prop}
+              language={language}
+            />
             ))
           )}
         </div>

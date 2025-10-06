@@ -5,7 +5,7 @@ import L from 'leaflet';
 import type { Language } from '../App';
 import { translations } from '../data/translations';
 import { getProperties } from '../services/propertyService';
-import type { Property } from '../data/properties';
+import type { Property } from '../types';
 import { BedIcon, BathIcon, AreaIcon } from './icons/Icons';
 
 interface PropertiesMapPageProps {

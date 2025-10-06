@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, Suspense, lazy } from "react";
 import { useSearchParams } from "react-router-dom";
-import FeatureSection from "./FeatureSection";
 import { getProperties } from "../services/propertyService";
 import type { Language } from "../App";
 import { translations } from "../data/translations";
 import { SearchIcon } from "./icons/Icons";
 import PropertyCardSkeleton from "./shared/PropertyCardSkeleton";
 import { Property } from "@/types";
+
+// Lazy loading للمكونات غير الحرجة
+const FeatureSection = lazy(() => import("./FeatureSection"));
 
 const inputClasses =
   "w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-white placeholder-gray-400";
@@ -17,6 +19,29 @@ interface PropertiesPageProps {
   onAddPropertyClick: () => void;
   language: Language;
 }
+
+// مكون Skeleton مخصص لقائمة العقارات
+const PropertiesListSkeleton = () => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
+    {Array.from({ length: 6 }).map((_, index) => (
+      <PropertyCardSkeleton key={index} />
+    ))}
+  </div>
+);
+
+// مكون لعرض قائمة العقارات مع Lazy Loading
+const PropertiesList: React.FC<{
+  properties: Property[];
+  language: Language;
+}> = ({ properties, language }) => {
+  return (
+    <Suspense fallback={<PropertiesListSkeleton />}>
+      {properties.map((prop) => (
+        <FeatureSection key={prop.id} {...prop} language={language} />
+      ))}
+    </Suspense>
+  );
+};
 
 const PropertiesPage: React.FC<PropertiesPageProps> = ({
   onAddPropertyClick,
@@ -31,9 +56,10 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({
   const [activeTab, setActiveTab] = useState<"buy" | "rent">("buy");
   const statusFilter = searchParams.get("status") || "all";
   const typeFilter = searchParams.get("type") || "all";
-  const finishFilter = searchParams.get("finish") || "all"; // قراءة فلتر التشطيب من معلمات البحث
+  const finishFilter = searchParams.get("finish") || "all";
   const queryFilter = searchParams.get("q") || "";
 
+  // تحسين: استخدام useEffect للتحميل الأولي للبيانات فقط
   useEffect(() => {
     const fetchProperties = async () => {
       try {
@@ -48,7 +74,9 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({
     };
 
     fetchProperties();
-    const interval = setInterval(fetchProperties, 30000);
+    
+    // تحسين: تقليل تكرار الطلب من 30 ثانية إلى 60 ثانية لتقليل الحمل على الخادم
+    const interval = setInterval(fetchProperties, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -188,6 +216,7 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
+  // تحسين: استخدام useMemo لتجنب إعادة الحساب غير الضرورية
   const filteredProperties = useMemo(() => {
     return properties.filter((p) => {
       // دعم العربية والإنجليزية في حالة العقار
@@ -417,15 +446,12 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({
           </div>
         </div>
 
+        {/* قسم عرض العقارات - يتم تحميله بشكل متأخر لتحسين الأداء */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
           {isLoading ? (
-            Array.from({ length: 6 }).map((_, index) => (
-              <PropertyCardSkeleton key={index} />
-            ))
+            <PropertiesListSkeleton />
           ) : filteredProperties.length > 0 ? (
-            filteredProperties.map((prop) => (
-              <FeatureSection key={prop.id} {...prop} language={language} />
-            ))
+            <PropertiesList properties={filteredProperties} language={language} />
           ) : (
             <div className="col-span-full text-center py-16">
               <p className="text-xl text-gray-400 mb-6">{t.noResults}</p>
