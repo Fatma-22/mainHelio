@@ -2,10 +2,10 @@ import React, { useRef, useEffect, useState } from "react";
 import type { Language } from "../App";
 import { translations } from "../data/translations";
 import { inputClasses } from "./shared/FormField";
-import { createDecorRequest } from "../services/decorationRequestsService";
 import ImageUploader from "./ImageUploader"; // استيراد ImageUploader
 import { ImageItem, PortfolioItem } from "../types";
 import { useAlert } from "../hooks/userAlert";
+import { createDecorRequest } from "@/services/decorationRequestsService";
 
 interface DecorationRequestModalProps {
   onClose: () => void;
@@ -34,12 +34,8 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
   const [phone, setPhone] = useState("");
   const [dimensions, setDimensions] = useState("");
   const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  // استبدال selectedFile بحالة الصور الجديدة
   const [images, setImages] = useState<ImageItem[]>([]);
-
-  // إضافة حالة لتخزين رسائل الخطأ
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({
     fullName: "",
     phone: "",
@@ -107,16 +103,18 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
     }
 
     // dimensions: required, min 2 chars (you can make this stricter if needed)
-    if (!dimensions.trim()) {
-      newErrors.dimensions =
-        language === "ar" ? "الأبعاد مطلوبة" : "Dimensions are required";
-      isValid = false;
-    } else if (dimensions.trim().length < 2) {
-      newErrors.dimensions =
-        language === "ar"
-          ? "الأبعاد يجب أن تحتوي على حرفين على الأقل"
-          : "Dimensions must be at least 2 characters";
-      isValid = false;
+    if (isWallDecor) {
+      if (!dimensions.trim()) {
+        newErrors.dimensions =
+          language === "ar" ? "الأبعاد مطلوبة" : "Dimensions are required";
+        isValid = false;
+      } else if (dimensions.trim().length < 2) {
+        newErrors.dimensions =
+          language === "ar"
+            ? "الأبعاد يجب أن تحتوي على حرفين على الأقل"
+            : "Dimensions must be at least 2 characters";
+        isValid = false;
+      }
     }
 
     // description: required, min 10 chars
@@ -132,8 +130,8 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
       isValid = false;
     }
 
-    // images: always required (at least 1 image)
-    if (images.length === 0) {
+    // Only require images for custom requests
+    if (!isSimilarRequest && images.length === 0) {
       newErrors.images =
         language === "ar"
           ? "يجب رفع صورة واحدة على الأقل"
@@ -232,16 +230,10 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // مسح الخطأ العام
     setErrors((prev) => ({ ...prev, form: "" }));
-
-    // التحقق من صحة النموذج قبل الإرسال
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
-
     try {
       // الحصول على الصورة المميزة إذا وجدت
       const featuredImage = images?.[0];
@@ -347,7 +339,6 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
             </div>
           )}
 
-          {/* عرض الخطأ العام */}
           {errors.form && (
             <div className="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-lg">
               <p className="text-red-400 text-center">{errors.form}</p>

@@ -832,6 +832,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
               <div className="mt-6">
                 <PropertyVideoManager
+                  language={language}
                   loading={isSubmitting}
                   initialVideos={formData?.videos ?? []}
                   onVideosChange={(videos) => {
