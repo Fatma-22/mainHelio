@@ -19,6 +19,7 @@ interface PropertyVideoGalleryProps {
   className?: string;
   showThumbnails?: boolean;
   maxVideos?: number;
+  language: "en" | "ar";
 }
 
 const PropertyVideoGallery: React.FC<PropertyVideoGalleryProps> = ({
@@ -26,6 +27,7 @@ const PropertyVideoGallery: React.FC<PropertyVideoGalleryProps> = ({
   className = "",
   showThumbnails = true,
   maxVideos = 6,
+  language = "en",
 }) => {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(
     videos.find((v) => v.is_primary) || videos[0] || null
@@ -59,6 +61,7 @@ const PropertyVideoGallery: React.FC<PropertyVideoGalleryProps> = ({
       {selectedVideo && (
         <div className="mb-6">
           <YouTubeVideoPlayer
+            language={language}
             videoId={selectedVideo.video_id}
             title={selectedVideo.title}
             thumbnailUrl={selectedVideo.thumbnail_url}

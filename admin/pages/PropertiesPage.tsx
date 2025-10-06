@@ -1,50 +1,104 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import type { Property, ImageItem, ApiImage } from '../types';
-import PropertyModal from '../components/PropertyModal';
-import { exportToCSV } from '../utils/export';
-import { ICONS } from '../constants';
-import { getProperties, createProperty, updateProperty, deleteProperty } from '../services/propertyService';
-import { mapApiImageToImageItem } from '../services/mappers';
+import React, { useState, useMemo, useEffect } from "react";
+import type { Property, ImageItem, ApiImage } from "../types";
+import PropertyModal from "../components/PropertyModal";
+import { exportToCSV } from "../utils/export";
+import { ICONS } from "../constants";
+import {
+  getProperties,
+  createProperty,
+  updateProperty,
+  deleteProperty,
+} from "../services/propertyService";
+import { mapApiImageToImageItem } from "../services/mappers";
 
 export interface PropertiesPageProps {
-  showToast: (message: string, type?: 'success' | 'error') => void;
-  
+  showToast: (message: string, type?: "success" | "error") => void;
 }
 
 // نوع خاص بالـ UI لتفادي مشاكل TypeScript
 type UiProperty = Omit<Property, "gallery"> & { gallery: ImageItem[] };
 
-const PropertyStatusBadge: React.FC<{ status: Property['status'] }> = ({ status }) => {
-  const base = 'px-3 py-1 text-xs font-semibold rounded-full';
+const PropertyStatusBadge: React.FC<{ status: Property["status"] }> = ({
+  status,
+}) => {
+  const base = "px-3 py-1 text-xs font-semibold rounded-full";
   switch (status) {
-    case 'للبيع': return <span className={`${base} bg-green-500/20 text-green-400`}>{status}</span>;
-    case 'للإيجار': return <span className={`${base} bg-yellow-500/20 text-yellow-400`}>{status}</span>;
-    case 'مباع': return <span className={`${base} bg-red-500/20 text-red-400`}>{status}</span>;
-    case 'مؤجر': return <span className={`${base} bg-purple-500/20 text-purple-400`}>{status}</span>;
-    default: return <span className={`${base} bg-gray-500/20 text-gray-400`}>{status}</span>;
+    case "للبيع":
+      return (
+        <span className={`${base} bg-green-500/20 text-green-400`}>
+          {status}
+        </span>
+      );
+    case "للإيجار":
+      return (
+        <span className={`${base} bg-yellow-500/20 text-yellow-400`}>
+          {status}
+        </span>
+      );
+    case "مباع":
+      return (
+        <span className={`${base} bg-red-500/20 text-red-400`}>{status}</span>
+      );
+    case "مؤجر":
+      return (
+        <span className={`${base} bg-purple-500/20 text-purple-400`}>
+          {status}
+        </span>
+      );
+    default:
+      return (
+        <span className={`${base} bg-gray-500/20 text-gray-400`}>{status}</span>
+      );
   }
 };
 
-const ListingStatusBadge: React.FC<{ isListed: boolean; listingEndDate?: string }> = ({ isListed, listingEndDate }) => {
-  const expired = listingEndDate ? new Date(listingEndDate) < new Date() : false;
-  if (!isListed) return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-500/20 text-gray-400">متوقف</span>;
-  if (expired) return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-orange-500/20 text-orange-400">منتهي</span>;
-  return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-teal-500/20 text-teal-400">معروض</span>;
+const ListingStatusBadge: React.FC<{
+  isListed: boolean;
+  listingEndDate?: string;
+}> = ({ isListed, listingEndDate }) => {
+  const expired = listingEndDate
+    ? new Date(listingEndDate) < new Date()
+    : false;
+  if (!isListed)
+    return (
+      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-500/20 text-gray-400">
+        متوقف
+      </span>
+    );
+  if (expired)
+    return (
+      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-orange-500/20 text-orange-400">
+        منتهي
+      </span>
+    );
+  return (
+    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-teal-500/20 text-teal-400">
+      معروض
+    </span>
+  );
 };
 
 const PropertiesPage: React.FC<PropertiesPageProps> = ({ showToast }) => {
   const [properties, setProperties] = useState<UiProperty[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProperty, setEditingProperty] = useState<UiProperty | null>(null);
-  const [filters, setFilters] = useState({ search: '', status: 'الكل', type: 'الكل' });
+  const [editingProperty, setEditingProperty] = useState<UiProperty | null>(
+    null
+  );
+  const [filters, setFilters] = useState({
+    search: "",
+    status: "الكل",
+    type: "الكل",
+  });
 
   // دالة مساعدة لتحويل الصور بشكل آمن
-  const convertGalleryToImageItems = (gallery: ApiImage[] | ImageItem[] | undefined): ImageItem[] => {
+  const convertGalleryToImageItems = (
+    gallery: ApiImage[] | ImageItem[] | undefined
+  ): ImageItem[] => {
     if (!gallery) return [];
-    
-    return gallery.map(img => {
+
+    return gallery.map((img) => {
       // تحقق إذا كان الكائن لديه خاصية previewUrl (يعني أنه ImageItem)
-      if ('previewUrl' in img) {
+      if ("previewUrl" in img) {
         return img as ImageItem;
       } else {
         // تحويل من ApiImage إلى ImageItem
@@ -52,21 +106,21 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ showToast }) => {
       }
     });
   };
-  
+
   // دالة للحصول على رابط الصورة بشكل آمن - تعمل مع كلا النوعين
   const getImageUrl = (image: ApiImage | ImageItem): string => {
-    if ('previewUrl' in image) {
+    if ("previewUrl" in image) {
       // ImageItem
-      return image.previewUrl || image.serverUrl || '';
+      return image.previewUrl || image.serverUrl || "";
     } else {
       // ApiImage
-      return image.url || '';
+      return image.url || "";
     }
   };
-  
+
   // دالة للحصول على النص البديل للصورة بشكل آمن - تعمل مع كلا النوعين
   const getImageAlt = (image: ApiImage | ImageItem): string => {
-    if ('previewUrl' in image) {
+    if ("previewUrl" in image) {
       // ImageItem
       return image.altText || `صورة العقار`;
     } else {
@@ -80,23 +134,23 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ showToast }) => {
     try {
       const data = await getProperties();
       console.log("Raw data from API:", data);
-      
+
       const mapped: UiProperty[] = data.map((prop: Property) => {
         console.log("Property before conversion:", prop);
         const convertedGallery = convertGalleryToImageItems(prop.gallery);
         console.log("Converted gallery:", convertedGallery);
-        
+
         return {
           ...prop,
-          gallery: convertedGallery
+          gallery: convertedGallery,
         };
       });
-      
+
       console.log("Final mapped properties:", mapped);
       setProperties(mapped);
     } catch (err) {
       console.error(err);
-      showToast('حدث خطأ أثناء جلب البيانات', 'error');
+      showToast("حدث خطأ أثناء جلب البيانات", "error");
     }
   };
 
@@ -105,10 +159,13 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ showToast }) => {
   }, []);
 
   const filteredProperties = useMemo(() => {
-    return properties.filter(prop => {
-      const searchMatch = prop.title.toLowerCase().includes(filters.search.toLowerCase()) || prop.address.toLowerCase().includes(filters.search.toLowerCase());
-      const statusMatch = filters.status === 'الكل' || prop.status === filters.status;
-      const typeMatch = filters.type === 'الكل' || prop.type === filters.type;
+    return properties.filter((prop) => {
+      const searchMatch =
+        prop.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+        prop.address.toLowerCase().includes(filters.search.toLowerCase());
+      const statusMatch =
+        filters.status === "الكل" || prop.status === filters.status;
+      const typeMatch = filters.type === "الكل" || prop.type === filters.type;
       return searchMatch && statusMatch && typeMatch;
     });
   }, [properties, filters]);
@@ -117,13 +174,13 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ showToast }) => {
     if (property) {
       console.log("Opening property for edit:", property);
       console.log("Gallery in property:", property.gallery);
-      
+
       // تأكد من أن الصور محولة بشكل صحيح قبل فتح النموذج
       const convertedProperty = {
         ...property,
-        gallery: convertGalleryToImageItems(property.gallery)
+        gallery: convertGalleryToImageItems(property.gallery),
       };
-      
+
       console.log("Converted property for modal:", convertedProperty);
       setEditingProperty(convertedProperty);
     } else {
@@ -138,38 +195,38 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ showToast }) => {
   };
 
   const handleSaveProperty = async (data: any) => {
-  try {
-    console.log("handleSaveProperty called with data:", data);
-    
-    if (data.id) {
-      console.log("Updating property with ID:", data.id);
-      await updateProperty(data.id, data);
-    } else {
-      console.log("Creating new property");
-      await createProperty(data);
+    try {
+      console.log("handleSaveProperty called with data:", data);
+
+      if (data.id) {
+        console.log("Updating property with ID:", data.id);
+        await updateProperty(data.id, data);
+      } else {
+        console.log("Creating new property");
+        await createProperty(data);
+      }
+
+      console.log("Property saved successfully, refreshing data");
+      await refreshData();
+      handleCloseModal();
+      showToast("تم حفظ بيانات العقار بنجاح", "success");
+    } catch (err) {
+      console.error("Error saving property:", err);
+      showToast("حدث خطأ أثناء حفظ العقار", "error");
     }
-    
-    console.log("Property saved successfully, refreshing data");
-    await refreshData();
-    handleCloseModal();
-    showToast('تم حفظ بيانات العقار بنجاح', 'success');
-  } catch (err) {
-    console.error("Error saving property:", err);
-    showToast('حدث خطأ أثناء حفظ العقار', 'error');
-  }
-};
+  };
   const handleDeleteProperty = async (id: number) => {
     try {
       await deleteProperty(id);
       await refreshData();
-      showToast('تم حذف العقار بنجاح', 'success');
+      showToast("تم حذف العقار بنجاح", "success");
     } catch (err) {
       console.error(err);
-      showToast('حدث خطأ أثناء حذف العقار', 'error');
+      showToast("حدث خطأ أثناء حذف العقار", "error");
     }
   };
 
-  const handleExport = () => exportToCSV(filteredProperties, 'properties.csv');
+  const handleExport = () => exportToCSV(filteredProperties, "properties.csv");
 
   return (
     <div className="space-y-6">
@@ -204,12 +261,12 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ showToast }) => {
           type="text"
           placeholder="ابحث بالاسم أو العنوان..."
           value={filters.search}
-          onChange={e => setFilters({ ...filters, search: e.target.value })}
+          onChange={(e) => setFilters({ ...filters, search: e.target.value })}
           className="bg-gray-700 text-white rounded-lg py-2 px-4 flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <select
           value={filters.status}
-          onChange={e => setFilters({ ...filters, status: e.target.value })}
+          onChange={(e) => setFilters({ ...filters, status: e.target.value })}
           className="bg-gray-700 text-white rounded-lg p-2 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
         >
           <option>الكل</option>
@@ -220,7 +277,7 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ showToast }) => {
         </select>
         <select
           value={filters.type}
-          onChange={e => setFilters({ ...filters, type: e.target.value })}
+          onChange={(e) => setFilters({ ...filters, type: e.target.value })}
           className="bg-gray-700 text-white rounded-lg p-2 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
         >
           <option>الكل</option>
@@ -241,7 +298,9 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ showToast }) => {
                 <th className="p-4 font-semibold">النوع</th>
                 <th className="p-4 font-semibold">الحالة</th>
                 <th className="p-4 font-semibold">حالة العرض</th>
-                {(filters.type === 'الكل' || filters.type === 'شقة' || filters.type === 'فيلا') && (
+                {(filters.type === "الكل" ||
+                  filters.type === "شقة" ||
+                  filters.type === "فيلا") && (
                   <>
                     <th className="p-4 font-semibold">الغرف/الحمامات</th>
                     <th className="p-4 font-semibold">التشطيب</th>
@@ -251,8 +310,11 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ showToast }) => {
               </tr>
             </thead>
             <tbody>
-              {filteredProperties.map(prop => (
-                <tr key={prop.id} className="border-b border-gray-700 hover:bg-gray-700/30">
+              {filteredProperties.map((prop) => (
+                <tr
+                  key={prop.id}
+                  className="border-b border-gray-700 hover:bg-gray-700/30"
+                >
                   <td className="p-4 font-medium text-white">
                     <div className="flex items-center gap-4">
                       {prop.gallery && prop.gallery.length > 0 ? (
@@ -265,13 +327,17 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ showToast }) => {
                             />
                           ) : (
                             <div className="w-14 h-14 rounded-md bg-gray-700 flex items-center justify-center">
-                              <span className="text-gray-400 text-xs">لا توجد صورة</span>
+                              <span className="text-gray-400 text-xs">
+                                لا توجد صورة
+                              </span>
                             </div>
                           )}
                         </>
                       ) : (
                         <div className="w-14 h-14 rounded-md bg-gray-700 flex items-center justify-center">
-                          <span className="text-gray-400 text-xs">لا توجد صورة</span>
+                          <span className="text-gray-400 text-xs">
+                            لا توجد صورة
+                          </span>
                         </div>
                       )}
                       <div>
@@ -296,13 +362,17 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ showToast }) => {
                       </p>
                     )}
                   </td>
-                  {(filters.type === 'الكل' || filters.type === 'شقة' || filters.type === 'فيلا') && (
+                  {(filters.type === "الكل" ||
+                    filters.type === "شقة" ||
+                    filters.type === "فيلا") && (
                     <>
                       <td className="p-4 text-gray-400">
-                        {prop.bedrooms || prop.bathrooms ? `${prop.bedrooms || 0}/${prop.bathrooms || 0}` : '-'}
+                        {prop.bedrooms || prop.bathrooms
+                          ? `${prop.bedrooms || 0}/${prop.bathrooms || 0}`
+                          : "-"}
                       </td>
                       <td className="p-4 text-gray-400">
-                        {prop.status === 'للبيع' ? (prop.finish || '-') : '-'}
+                        {prop.status === "للبيع" ? prop.finish || "-" : "-"}
                       </td>
                     </>
                   )}

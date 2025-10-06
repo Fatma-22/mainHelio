@@ -22,7 +22,7 @@ interface PropertyDetailsPageProps {
 }
 
 const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
-  language,
+  language = "en",
 }) => {
   const { propertyId } = useParams<{ propertyId: string }>();
   const t = translations[language];
@@ -196,6 +196,7 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
                     if (videoId) {
                       return (
                         <YouTubeVideoPlayer
+                          language={language}
                           videoId={videoId}
                           title={property?.title}
                           width="100%"
