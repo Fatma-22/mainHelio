@@ -32,7 +32,13 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
   );
   const [isLoading, setIsLoading] = useState(true);
   const [mainImage, setMainImage] = useState<string | undefined>(undefined);
-
+  const [showContactInfo, setShowContactInfo] = useState(false);
+  const ownerTypeTranslations: Record<string, { ar: string; en: string }> = {
+    owner: { ar: "مالك العقار", en: "Property Owner" },
+    agent: { ar: "وسيط عقاري", en: "Agent" },
+    company: { ar: "شركة", en: "Company" },
+    developer: { ar: "مطور عقاري", en: "Developer" },
+  };
   useEffect(() => {
     const fetchProperty = async () => {
       if (!propertyId) {
@@ -86,6 +92,10 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
     }
   };
 
+  const handleContactClick = () => {
+    setShowContactInfo(!showContactInfo);
+  };
+
   if (isLoading) {
     return (
       <div className="col-span-full text-center py-16">
@@ -136,6 +146,35 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
     propertyDescription.trim().length > 5 && 
     !/^[a-zA-Z0-9]*$/.test(propertyDescription) &&
     !/^[a-zA-Z0-9]{10,}$/.test(propertyDescription);
+
+  // Get contact information based on phoneview setting
+  const getContactInfo = () => {
+  const showOwnerPhone = (property as any).phoneview === true || (property as any).phoneview === 1;
+  const ownerPhone = (property as any).requesterPhone || "";
+  const companyPhone = "01200728006"; // Default company phone
+
+  let phoneNumber = showOwnerPhone ? ownerPhone : companyPhone;
+
+  // تنظيف الرقم من أي رموز
+  phoneNumber = phoneNumber.replace(/[^0-9]/g, "");
+
+  // لو الرقم يبدأ بـ 0 → نحط كود الدولة بدل الصفر (مصر 20)
+  if (phoneNumber.startsWith("0")) {
+    phoneNumber = "2" + phoneNumber; // الآن يبدأ بـ 20
+  }
+
+  // لو مش فيه كود دولة أصلاً، نضيف كود مصر (يمكن تغييره حسب الدولة)
+  if (!phoneNumber.startsWith("20")) {
+    phoneNumber = "20" + phoneNumber.replace(/^0/, "");
+  }
+
+  const whatsappLink = `https://wa.me/${phoneNumber}`;
+
+  return { phoneNumber, whatsappLink };
+};
+
+
+  const { phoneNumber, whatsappLink } = getContactInfo();
 
   return (
     <div className="bg-gray-900 text-white py-12">
@@ -393,7 +432,22 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
                       </span>
                     </div>
                   )}
-
+                {(property as any).ownertype && (
+                  <div className="flex flex-col items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span className="font-bold">
+                    {
+                      ownerTypeTranslations[(property as any).ownertype?.toLowerCase()]?.[language] ||
+                      (property as any).ownertype
+                    }
+                  </span>
+                    <span>
+                      {language === "ar" ? "معروض بواسطة" : "previewed by"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex flex-col items-center gap-2">
                   <AreaIcon className="w-8 h-8 text-gray-400" />
                   <span className="font-bold">{property.area} m²</span>
@@ -407,13 +461,41 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
                 <p className="text-gray-400">
                   {t.propertyDetailsPage?.contactText}
                 </p>
+                
+                {/* Contact button and info */}
+                <button
+                  onClick={handleContactClick}
+                  className="w-full block text-center bg-amber-500 text-gray-900 font-bold px-6 py-4 rounded-lg text-lg hover:bg-amber-600 transition-colors duration-200 mb-4"
+                >
+                  {showContactInfo 
+                    ? (language === 'ar' ? 'إخفاء معلومات الاتصال' : 'Hide Contact Info') 
+                    : t.propertyDetailsPage?.contactButton}
+                </button>
+                
+                {showContactInfo && (
+                  <div className="flex flex-col gap-3 p-4 bg-gray-700 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      <span className="text-gray-300">{phoneNumber}</span>
+                    </div>
+                    
+                    <a 
+                      href={whatsappLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-green-500 hover:text-green-400 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-1.927-.923-.407-.228-.679-.342-1.052-.342-.373 0-.572.149-.67.247-.099.099-.997.997-.997 2.422 0 1.425.997 2.799 1.145 3.015.149.223 1.946 3.099 4.838 4.348 2.892 1.249 3.489.999 4.117.933.628-.066 1.758-.742 2.006-1.458.248-.716.248-1.333.173-1.463-.074-.13-.272-.227-.57-.376z"/>
+                        <path fillRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 1.995.588 3.85 1.597 5.407L2.057 19.77a1 1 0 001.364 1.364l4.363-1.54A9.952 9.952 0 0012 22c5.523 0 10-4.477 10-10s-4.477-10-10-10zm0 18a8 8 0 110-16 8 8 0 010 16z" clipRule="evenodd"/>
+                      </svg>
+                      <span>{language === 'ar' ? 'تواصل عبر واتساب' : 'Contact on WhatsApp'}</span>
+                    </a>
+                  </div>
+                )}
               </div>
-              <Link
-                to="/contact"
-                className="w-full block text-center bg-amber-500 text-gray-900 font-bold px-6 py-4 rounded-lg text-lg hover:bg-amber-600 transition-colors duration-200"
-              >
-                {t.propertyDetailsPage?.contactButton}
-              </Link>
             </div>
           </div>
         </div>

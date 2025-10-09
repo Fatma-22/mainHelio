@@ -42,6 +42,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     status: "",
     finish: "",
     videos: [],
+    phoneview: false,
   });
 
   const [images, setImages] = useState<ImageItem[]>([]);
@@ -284,7 +285,14 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
-    const { id, value } = e.target;
+    const { id, value, type } = e.target;
+
+    // التعامل مع checkbox
+    if (type === "checkbox") {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData((prev) => ({ ...prev, [id]: checked }));
+      return;
+    }
 
     // التحقق من الحقول الرقمية
     if (["area", "price", "bedrooms", "bathrooms"].includes(id)) {
@@ -553,6 +561,21 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                         {errors.ownerPhone}
                       </div>
                     )}
+                     {/* Phone View Checkbox */}
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="phoneview"
+                  checked={formData.phoneview}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-600 rounded bg-gray-700"
+                />
+                <label htmlFor="phoneview" className="ml-2 block text-sm text-gray-300">
+                  {language === "ar" 
+                    ? "إظهار رقم الهاتف في الموقع" 
+                    : "Show phone number on the website"}
+                </label>
+              </div>
                   </FormField>
                   <FormField label={t.emailOptional} id="ownerEmail">
                     <input
@@ -713,8 +736,12 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                     >
                       <option value="">{t.selectStatus}</option>
                       <option value="للبيع">{t.forSale}</option>
-                      <option value="للإيجار">{t.forRent}</option>
-                      <option value="شراكة">{t.sharing}</option>
+                      {formData.type !== "ارض" && (
+                        <option value="للإيجار">{t.forRent}</option>
+                      )}
+                      {formData.type === "ارض" && (
+                        <option value="شراكة">{t.sharing}</option>
+                      )}
                     </select>
                     {errors.status && (
                       <div className="text-red-500 text-sm mt-1">
@@ -904,6 +931,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                   )}
                 </FormField>
               </div>
+
+             
 
               <div className="pt-6 flex justify-end">
                 <button

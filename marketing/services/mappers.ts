@@ -67,6 +67,7 @@ export function mapApiPropertyToProperty(apiProp: any): Property {
     addeddate: apiProp.created_at || "",
     listingPlane: apiProp.listing_plan || "",
     keywords: apiProp.keywords || "",
+    phoneview:apiProp.phoneview||false,
   };
 }
 
@@ -194,7 +195,7 @@ export function mapApiSiteContentToSiteContent(apiData: any): SiteContent {
 export const mapApiImageToImageItem = (img: ApiImage): ImageItem => ({
   id: String(img.id || Math.random()),
   file: null,
-  altText: img.altText || "",
+  altText: img.alttext || "",
   caption: img.caption || "",
   isFeatured: img.isfeatured === 1,
   sort: img.sort || 0,

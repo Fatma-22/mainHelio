@@ -32,7 +32,7 @@ export interface ApiImage {
   url: string;
   thumbnail_url?: string;
   medium_url?: string;
-  alt_text: string;
+  alttext: string;
   caption?: string;
   isfeatured: number;
   sort: number;
@@ -82,6 +82,7 @@ export interface Property {
   listingPlane: string;
   isfeatured?: boolean;
   altText?: string;
+  phoneview:boolean;
 }
 
 export type InquiryStatus = "جديد" | "تم التواصل" | "قيد المتابعة" | "مغلق";
@@ -147,6 +148,7 @@ export interface PropertyRequest {
   isListed?: boolean;
   isfeatured?: boolean;
   altText?: string;
+  phoneview:boolean;
 }
 
 export type FinishingRequestStatus =
