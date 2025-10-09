@@ -394,7 +394,7 @@ public function approve($id)
         'bedrooms' => 'nullable|integer|min:0',
         'bathrooms' => 'nullable|integer|min:0',
         'type' => 'required|in:شقة,فيلا,ارض,تجاري',
-        'status' => 'sometimes|in:للبيع,للإيجار,مباع,مؤجر',
+        'status' => 'sometimes|in:للبيع,للإيجار,مباع,مؤجر,شراكة',
         'finish' => 'nullable|in:تشطيب كامل,نص تشطيب,على الطوب',
         'address' => 'required|string|max:255',
         'listing_plan' => 'required|in:paid,commission',
