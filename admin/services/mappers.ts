@@ -90,6 +90,7 @@ export function mapApiPropertyToProperty(apiProp: any): Property {
     addeddate: apiProp.created_at || "",
     listingPlane: apiProp.listing_plan || "",
     keywords: apiProp.keywords || "",
+    ownertype:apiProp.ownertype||"",
   };
 }
 
@@ -140,6 +141,7 @@ export function mapApiPropertyRequestToPropertyRequest(
     googleMapsUrl: apiReq.google_maps_url || "",
     listingPlane: apiReq.listing_plan || "",
     isListed: apiReq.is_listed,
+    ownertype:apiReq.ownertype
   };
 }
 

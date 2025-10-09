@@ -53,7 +53,7 @@ export interface ApiImage {
 }
 
 export type PropertyStatus = "للبيع" | "للإيجار" | "مباع" | "مؤجر";
-export type PropertyType = "شقة" | "فيلا" | "أرض" | "تجاري";
+export type PropertyType = "شقة" | "فيلا" | "ارض" | "تجاري";
 
 export interface Property {
   id: number;
@@ -82,6 +82,7 @@ export interface Property {
   listingPlane: string;
   isfeatured?: boolean;
   altText?: string;
+  ownertype:string;
 }
 
 export type InquiryStatus = "جديد" | "تم التواصل" | "قيد المتابعة" | "مغلق";
@@ -147,6 +148,7 @@ export interface PropertyRequest {
   isListed?: boolean;
   isfeatured?: boolean;
   altText?: string;
+  ownertype:string;
 }
 
 export type FinishingRequestStatus =

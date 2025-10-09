@@ -55,7 +55,7 @@ const InquiriesPage: React.FC<InquiriesPageProps> = ({ showToast }) => {
     };
 
     loadInquiries();
-  }, [showToast]);
+  }, []);
   
   const filteredInquiries = useMemo(() => {
     return inquiries.filter(inquiry => {

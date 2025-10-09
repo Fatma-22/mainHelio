@@ -57,37 +57,16 @@ export const createDecorRequest = async (
 // 🟢 Update decoration request
 export const updateDecorRequest = async (
   id: number,
-  data: Partial<DecorationRequest>,
-  imageFile?: File,
-  imageData?: any
+  data: Partial<DecorationRequest>
 ): Promise<DecorationRequest> => {
-  const formData = new FormData();
-  
-  // Append text fields - متوافقة مع أسماء الحقول في الباك إند
-  // لا نرسل clientName و clientPhone في التحديث لأنها ليست جزءاً من نموذج الطلب
-  formData.append('status', data.status || '');
-  formData.append('notes', data.notes || '');
-  
-  // Append image metadata
-  if (imageData) {
-    formData.append('altText', imageData.altText || '');
-    formData.append('caption', imageData.caption || '');
-  }
-  
-  // Append image file if provided
-  if (imageFile) {
-    formData.append('image', imageFile);
-  }
-  
-  const response = await api.put(`/decor-requests/${id}`, formData, {
+  const response = await api.put(`/decor-requests/${id}`, data, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      'Content-Type': 'application/json',
     },
   });
   
   return mapApiDecorationRequestToDecorationRequest(response.data);
 };
-
 // 🟢 Delete decoration request
 export const deleteDecorRequest = async (id: number): Promise<void> => {
   await api.delete(`/decor-requests/${id}`);

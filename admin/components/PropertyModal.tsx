@@ -31,6 +31,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
 }) => {
   const formDataInitialize = {
     title: "",
+    ownertype: "",
     address: "",
     price: "",
     status: "للبيع" as PropertyStatus,
@@ -48,6 +49,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
     keywords: "",
     listing_plan: "paid",
     videos: [],
+ 
   };
 
   const [formData, setFormData] = useState(formDataInitialize);
@@ -64,6 +66,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
 
       setFormData({
         title: property.title || "",
+        ownertype: (property as any).ownertype || "",
         address: property.address || "",
         price: property.price || "",
         status: property.status || "للبيع",
@@ -139,6 +142,13 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
       newErrors.title = "عنوان العقار يجب أن يكون 5 أحرف على الأقل";
     }
 
+    // فاليدشن على معروض بواسطة
+    if (!formData.ownertype.trim()) {
+      newErrors.ownertype = "حقل معروض بواسطة مطلوب";
+    } else if (formData.ownertype.trim().length < 5) {
+      newErrors.ownertype = "معروض بواسطة يجب أن يكون 5 أحرف على الأقل";
+    }
+
     // فاليدشن على العنوان
     if (!formData.address.trim()) {
       newErrors.address = "عنوان العقار مطلوب";
@@ -164,14 +174,14 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
 
     // فاليدشن على الصور
     console.log("عدد الصور:", images.length);
-    if (images.length < 3) {
-      newErrors.images = "يجب رفع على الأقل 3 صور";
+    if (images.length < 1) {
+      newErrors.images = "يجب رفع على الأقل صورة واحدة";
     }
 
     // فاليدشن على وجود صورة مميزة
     const featuredImages = images.filter((img) => img.isFeatured);
     console.log("عدد الصور المميزة:", featuredImages.length);
-    if (featuredImages.length === 0 && images.length > 0) {
+    if (featuredImages.length === 0 && images.length > 1) {
       newErrors.featuredImage = "يجب تحديد صورة مميزة واحدة على الأقل";
     }
 
@@ -196,6 +206,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
     const processedData: any = {
       id: property?.id,
       title: formData.title,
+      ownertype: formData.ownertype,
       address: formData.address,
       price: formData.price,
       status: formData.status,
@@ -277,7 +288,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
     setImages(newImages);
 
     // مسح خطأ الصور عند إضافة صور جديدة
-    if (newImages.length >= 3 && errors.images) {
+    if (newImages.length >= 1 && errors.images) {
       setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors.images;
@@ -354,6 +365,28 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
               <p className="mt-1 text-sm text-red-500">{errors.title}</p>
             )}
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              معروض بواسطة
+            </label>
+            <input
+              type="text"
+              value={formData.ownertype}
+              onChange={(e) =>
+                setFormData({ ...formData, ownertype: e.target.value })
+              }
+              required
+              className={`w-full bg-gray-700 border ${
+                errors.ownertype ? "border-red-500" : "border-gray-600"
+              } rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60`}
+              disabled={isSaving}
+            />
+            {errors.ownertype && (
+              <p className="mt-1 text-sm text-red-500">{errors.ownertype}</p>
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               الوصف
@@ -465,9 +498,16 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
                 disabled={isSaving}
               >
                 <option>للبيع</option>
-                <option>للإيجار</option>
+                {formData.type !== "ارض" && (
+                  <>
+                    <option>للإيجار</option>
+                    <option>مؤجر</option>
+                  </>
+                )}
                 <option>مباع</option>
-                <option>مؤجر</option>
+                {formData.type === "ارض" && (
+                  <option>شراكة</option>
+                )}
               </select>
             </div>
             <div>
@@ -599,7 +639,7 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
               <ImageUploader
                 images={images}
                 onImagesChange={handleImagesChange}
-                minImages={3}
+                minImages={1}
                 maxImages={20}
               />
             </div>

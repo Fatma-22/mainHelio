@@ -442,14 +442,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         const height = img.naturalHeight;
         console.log("Image dimensions:", width, height);
 
-        if (width < 1200 || height < 800) {
-          resolve({
-            valid: false,
-            error: "أبعاد الصورة صغيرة جدًا. الحد الأدنى هو 1200x800 بكسل.",
-          });
-          return;
-        }
-
+        // Removed the aspect ratio check - any dimensions are now accepted
         resolve({ valid: true, width, height });
       };
 
@@ -824,7 +817,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               </p>
               <p className="text-sm text-gray-500">أو انقر لاختيار الصور</p>
               <p className="text-xs text-gray-500 mt-2">
-                JPEG, PNG, WebP (بحد أقصى 5 ميجابايت، 1200x800 بكسل كحد أدنى)
+                JPEG, PNG, WebP (بحد أقصى 5 ميجابايت)
               </p>
             </>
           )}
