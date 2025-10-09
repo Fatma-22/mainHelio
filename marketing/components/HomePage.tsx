@@ -40,7 +40,7 @@ const HomePage: React.FC<HomePageProps> = ({
       <Integrations language={language} siteContent={currentSiteContent} />
       <SocialProof
         featuredProperties={featuredProperties}
-        isLoading={isLoading} language={"ar"}      />
+        isLoading={isLoading} language={language}      />
       {/* <Partners language={language} />
       <WisdomQuotes language={language} /> */}
       <CTA language={language} />

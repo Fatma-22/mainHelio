@@ -3,7 +3,7 @@
 
 CREATE TABLE `property_videos` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `property_id` bigint(20) unsigned NOT NULL,
+  `property_id` int(20) unsigned NOT NULL,
   `video_url` varchar(255) NOT NULL COMMENT 'YouTube URL',  
   `thumbnail_url` varchar(255) DEFAULT NULL, 
 

@@ -230,6 +230,7 @@ export const translations = {
       selectStatus: "اختر الحالة...",
       forSale: "للبيع",
       forRent: "للإيجار",
+      sharing:"شراكة",
       submitting: "جاري الإرسال...",
     },
     success: {
@@ -297,7 +298,7 @@ export const translations = {
       service3Desc:
         "نتولى كافة أعمال التشطيب لوحدتك، بدءًا من التنفيذ وحتى التسليم، مع إشراف كامل لضمان أعلى مستويات الجودة.",
       requestButton: "اطلب الخدمة",
-      galleryTitle: "شركاء العمل",
+      galleryTitle: "من اعمال شركائنا",
       gallerySubtitle: "شاهد بنفسك كيف نحول المساحات إلى تحف فنية.",
       ctaTitle: "هل لديك مشروع في هليوبوليس الجديدة؟",
       ctaSubtitle:
@@ -767,6 +768,7 @@ export const translations = {
       selectStatus: "Select status...",
       forSale: "For Sale",
       forRent: "For Rent",
+      sharing:"sharing",
       submitting: "Submitting",
     },
     imageUploader: {
@@ -840,7 +842,7 @@ export const translations = {
       service3Desc:
         "We handle all finishing work for your unit, from execution to handover, with full supervision to ensure the highest quality standards.",
       requestButton: "Request Service",
-      galleryTitle: "Our Work",
+      galleryTitle: "Our Parteners Work",
       gallerySubtitle: "See for yourself how we turn spaces into masterpieces.",
       ctaTitle: "Do you have a project in New Heliopolis?",
       ctaSubtitle:

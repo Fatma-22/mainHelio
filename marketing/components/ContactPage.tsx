@@ -154,7 +154,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ language, siteContentAr, site
         console.error('Error sending inquiry:', error);
         // عرض تنبيه الخطأ بدلاً من alert
         showErrorAlert(
-            translations[language].errors.operations.contactFormFailed || 
+            translations[language].errors.errorSubmit || 
             (language === 'ar' ? 'حدث خطأ أثناء إرسال الاستفسار. يرجى المحاولة مرة أخرى.' : 'An error occurred while sending your inquiry. Please try again.')
         );
     } finally {

@@ -4,14 +4,15 @@ import type { Language } from "../App";
 import { translations } from "../data/translations";
 import { getPortfolioItems } from "../services/portfolioService";
 import type { PortfolioItem } from "../types";
+
 type ModalInfoProps = {
   isOpen: Boolean;
   title: string;
-
   serviceType: string;
   requestType: "custom" | "similar";
   item: PortfolioItem;
 };
+
 const DecorationsPage: React.FC<{ language: Language }> = ({ language }) => {
   const t = translations[language].decorationsPage;
   const [activeTab, setActiveTab] = useState<"wall" | "painting" | "antique">(
@@ -28,6 +29,9 @@ const DecorationsPage: React.FC<{ language: Language }> = ({ language }) => {
     item: undefined,
     requestType: "custom",
   });
+
+  // Lightbox state for navigation
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // 🟢 تحميل البيانات من البورتفوليو مع إضافة حالة التحميل والخطأ
   useEffect(() => {
@@ -87,13 +91,38 @@ const DecorationsPage: React.FC<{ language: Language }> = ({ language }) => {
     });
   };
 
-  // دالة لفتح الصورة
-  const openLightbox = (imageUrl: string) => {
+  // دالة لفتح الصورة مع تحديد الفهرس
+  const openLightbox = (imageUrl: string, index: number) => {
     setLightboxImage(imageUrl);
+    setCurrentImageIndex(index);
   };
 
   // دالة لإغلاق الصورة
-  const closeLightbox = () => setLightboxImage(null);
+  const closeLightbox = () => {
+    setLightboxImage(null);
+  };
+
+  // Navigate to next image
+  const nextImage = () => {
+    const newIndex = (currentImageIndex + 1) % filteredItems.length;
+    const imageUrl = 
+      filteredItems[newIndex]?.cover_url ||
+      filteredItems[newIndex]?.imageUrl ||
+      "/placeholder-image.jpg";
+    setLightboxImage(imageUrl);
+    setCurrentImageIndex(newIndex);
+  };
+
+  // Navigate to previous image
+  const prevImage = () => {
+    const newIndex = (currentImageIndex - 1 + filteredItems.length) % filteredItems.length;
+    const imageUrl = 
+      filteredItems[newIndex]?.cover_url ||
+      filteredItems[newIndex]?.imageUrl ||
+      "/placeholder-image.jpg";
+    setLightboxImage(imageUrl);
+    setCurrentImageIndex(newIndex);
+  };
 
   // 🟢 ربط التاب بالـ type من البورتفوليو
   const tabs = [
@@ -222,7 +251,7 @@ const DecorationsPage: React.FC<{ language: Language }> = ({ language }) => {
                     </div>
                   ) : (
                     <div className="flex flex-wrap justify-center gap-6 mb-12">
-                      {filteredItems.map((item) => (
+                      {filteredItems.map((item, index) => (
                         <div
                           key={item.id}
                           className="group relative overflow-hidden rounded-lg shadow-lg bg-gray-800 w-[calc(50%-1.5rem)] md:w-[calc(33.33%-1rem)] lg:w-[calc(25%-1rem)] aspect-w-1 aspect-h-1"
@@ -245,7 +274,8 @@ const DecorationsPage: React.FC<{ language: Language }> = ({ language }) => {
                               openLightbox(
                                 item?.cover_url ||
                                   item.imageUrl ||
-                                  "/placeholder-image.jpg"
+                                  "/placeholder-image.jpg",
+                                index
                               )
                             }
                             loading="lazy"
@@ -298,6 +328,33 @@ const DecorationsPage: React.FC<{ language: Language }> = ({ language }) => {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
           onClick={closeLightbox}
         >
+          {/* Navigation Arrows */}
+          {filteredItems.length > 1 && (
+            <>
+              {/* زر السهم اليمين */}
+              <button
+                className="absolute right-5 text-white text-4xl font-bold z-50 bg-black/50 rounded-full w-12 h-12 flex items-center justify-center"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage(); // دايمًا اليمين = التالي
+                }}
+              >
+                {language === 'ar' ? '‹' : '›'}
+              </button>
+
+              {/* زر السهم الشمال */}
+              <button
+                className="absolute left-5 text-white text-4xl font-bold z-50 bg-black/50 rounded-full w-12 h-12 flex items-center justify-center"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage(); // دايمًا الشمال = السابق
+                }}
+              >
+                {language === 'ar' ? '›' : '‹'}
+              </button>
+            </>
+          )}
+
           <img
             src={lightboxImage}
             alt="Zoomed"

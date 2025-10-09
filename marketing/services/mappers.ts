@@ -116,7 +116,7 @@ export const mapApiDecorationRequestToDecorationRequest = (
     image: apiRequest.full_image_url, // استخدام full_image_url من الباك إند
     thumbnailUrl: apiRequest.full_thumbnail_url,
     mediumUrl: apiRequest.full_medium_url,
-    altText: apiRequest.alt_text,
+    altText: apiRequest.altText,
     caption: apiRequest.caption,
     requestDate: apiRequest.created_at, // استخدام created_at من الباك إند
     reference_item_id: apiRequest.reference_item_id,
@@ -143,7 +143,7 @@ export function mapApiPortfolioItemToPortfolioItem(
       : apiItem.images_json?.[0] || "",
     thumbnailUrl: apiItem.thumbnail_url.replace(/\\/g, "") ?? "",
     mediumUrl: apiItem.medium_url.replace(/\\/g, "") ?? "",
-    altText: apiItem.alt_text || "",
+    altText: apiItem.altText || "",
     caption: apiItem.caption || "",
   };
 }
@@ -194,7 +194,7 @@ export function mapApiSiteContentToSiteContent(apiData: any): SiteContent {
 export const mapApiImageToImageItem = (img: ApiImage): ImageItem => ({
   id: String(img.id || Math.random()),
   file: null,
-  altText: img.alt_text || "",
+  altText: img.altText || "",
   caption: img.caption || "",
   isFeatured: img.isfeatured === 1,
   sort: img.sort || 0,

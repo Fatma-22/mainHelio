@@ -37,7 +37,6 @@ export const createDecorRequest = async (data: {
   if (data.image) {
     formData.append("image", data.image);
   }
-
   const response = await api.post("/decor-requests", formData, {
     headers: {
       "Content-Type": "multipart/form-data",

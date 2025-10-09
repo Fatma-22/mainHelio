@@ -36,6 +36,7 @@ const SortableImageItem = ({
   onSetFeatured,
   isFeatured,
   onEditMetadata,
+  language = 'ar',
 }: {
   image: ImageItem;
   onRemove: (id: string) => void;
@@ -46,6 +47,7 @@ const SortableImageItem = ({
     id: string,
     metadata: { altText: string; caption: string; seoKeywords: string }
   ) => void;
+  language?: Language;
 }) => {
   const {
     attributes,
@@ -83,7 +85,7 @@ const SortableImageItem = ({
       return `${(image.fileSize / 1024 / 1024).toFixed(2)} MB`;
     }
     // For existing images, we don't have the file size
-    return "موجود مسبقاً";
+    return language === 'ar' ? "موجود مسبقاً" : "Existing";
   };
 
   const [isEditing, setIsEditing] = useState(false);
@@ -105,6 +107,27 @@ const SortableImageItem = ({
       seoKeywords: image.seoKeywords || "",
     });
     setIsEditing(false);
+  };
+
+  // Text translations
+  const texts = {
+    featured: language === 'ar' ? 'مميزة' : 'Featured',
+    uploading: language === 'ar' ? 'جاري الرفع' : 'Uploading',
+    editMetadata: language === 'ar' ? 'تعديل البيانات الوصفية' : 'Edit Metadata',
+    unfeature: language === 'ar' ? 'إلغاء التمييز' : 'Unfeature',
+    setFeatured: language === 'ar' ? 'تعيين كمميزة' : 'Set as Featured',
+    remove: language === 'ar' ? 'إزالة' : 'Remove',
+    altTextLabel: language === 'ar' ? 'النص البديل:' : 'Alt Text:',
+    captionLabel: language === 'ar' ? 'العنوان:' : 'Caption:',
+    keywordsLabel: language === 'ar' ? 'الكلمات المفتاحية:' : 'Keywords:',
+    altTextPlaceholder: language === 'ar' ? 'وصف الصورة للـ SEO' : 'Image description for SEO',
+    captionPlaceholder: language === 'ar' ? 'عنوان الصورة' : 'Image caption',
+    keywordsPlaceholder: language === 'ar' ? 'كلمات مفتاحية مفصولة بفواصل' : 'Comma-separated keywords',
+    save: language === 'ar' ? 'حفظ' : 'Save',
+    cancel: language === 'ar' ? 'إلغاء' : 'Cancel',
+    altTextFormLabel: language === 'ar' ? 'النص البديل (Alt Text)' : 'Alt Text',
+    captionFormLabel: language === 'ar' ? 'العنوان (Caption)' : 'Caption',
+    keywordsFormLabel: language === 'ar' ? 'الكلمات المفتاحية (SEO)' : 'SEO Keywords',
   };
 
   return (
@@ -141,7 +164,7 @@ const SortableImageItem = ({
             >
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
-            مميزة
+            {texts.featured}
           </div>
         )}
 
@@ -169,7 +192,7 @@ const SortableImageItem = ({
                   {image.uploadProgress}%
                 </span>
               </div>
-              <p className="text-white text-xs mt-2">جاري الرفع</p>
+              <p className="text-white text-xs mt-2">{texts.uploading}</p>
             </div>
           </div>
         )}
@@ -182,7 +205,7 @@ const SortableImageItem = ({
                 type="button"
                 onClick={() => setIsEditing(true)}
                 className="p-1.5 bg-blue-500/80 hover:bg-blue-500 text-white rounded-full transition-colors"
-                title="تعديل البيانات الوصفية"
+                title={texts.editMetadata}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -207,7 +230,7 @@ const SortableImageItem = ({
                     ? "bg-amber-500 text-white"
                     : "bg-gray-700/80 text-gray-300 hover:bg-gray-700 hover:text-amber-500"
                 }`}
-                title={isFeatured ? "إلغاء التمييز" : "تعيين كمميزة"}
+                title={isFeatured ? texts.unfeature : texts.setFeatured}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -222,7 +245,7 @@ const SortableImageItem = ({
                 type="button"
                 onClick={() => onRemove(image.id)}
                 className="p-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-full transition-colors"
-                title="إزالة"
+                title={texts.remove}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -276,29 +299,23 @@ const SortableImageItem = ({
           <span className="text-xs text-gray-500">{getImageSize()}</span>
         </div>
 
-        {image.width && image.height && (
-          <div className="text-xs text-gray-500 mb-2">
-            {image.width} × {image.height} pixels
-          </div>
-        )}
-
         {/* Metadata display */}
         {!isEditing && (
           <div className="mt-2 space-y-1">
             {image.altText && (
               <div className="text-xs text-gray-400">
-                <span className="font-medium">النص البديل:</span>{" "}
+                <span className="font-medium">{texts.altTextLabel}</span>{" "}
                 {image.altText}
               </div>
             )}
             {image.caption && (
               <div className="text-xs text-gray-400">
-                <span className="font-medium">العنوان:</span> {image.caption}
+                <span className="font-medium">{texts.captionLabel}</span> {image.caption}
               </div>
             )}
             {image.seoKeywords && (
               <div className="text-xs text-gray-400">
-                <span className="font-medium">الكلمات المفتاحية:</span>{" "}
+                <span className="font-medium">{texts.keywordsLabel}</span>{" "}
                 {image.seoKeywords}
               </div>
             )}
@@ -310,7 +327,7 @@ const SortableImageItem = ({
           <div className="mt-2 space-y-2">
             <div>
               <label className="block text-xs text-gray-400 mb-1">
-                النص البديل (Alt Text)
+                {texts.altTextFormLabel}
               </label>
               <input
                 type="text"
@@ -319,12 +336,12 @@ const SortableImageItem = ({
                   setEditData({ ...editData, altText: e.target.value })
                 }
                 className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white"
-                placeholder="وصف الصورة للـ SEO"
+                placeholder={texts.altTextPlaceholder}
               />
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1">
-                العنوان (Caption)
+                {texts.captionFormLabel}
               </label>
               <input
                 type="text"
@@ -333,12 +350,12 @@ const SortableImageItem = ({
                   setEditData({ ...editData, caption: e.target.value })
                 }
                 className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white"
-                placeholder="عنوان الصورة"
+                placeholder={texts.captionPlaceholder}
               />
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1">
-                الكلمات المفتاحية (SEO)
+                {texts.keywordsFormLabel}
               </label>
               <input
                 type="text"
@@ -347,7 +364,7 @@ const SortableImageItem = ({
                   setEditData({ ...editData, seoKeywords: e.target.value })
                 }
                 className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white"
-                placeholder="كلمات مفتاحية مفصولة بفواصل"
+                placeholder={texts.keywordsPlaceholder}
               />
             </div>
             <div className="flex gap-2 mt-2">
@@ -356,14 +373,14 @@ const SortableImageItem = ({
                 onClick={handleSaveMetadata}
                 className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
               >
-                حفظ
+                {texts.save}
               </button>
               <button
                 type="button"
                 onClick={handleCancelEdit}
                 className="px-2 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors"
               >
-                إلغاء
+                {texts.cancel}
               </button>
             </div>
           </div>
@@ -379,6 +396,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   minImages = 3,
   maxImages = 20,
   onUploadComplete,
+  language = 'ar',
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -442,7 +460,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       if (!validTypes.includes(file.type)) {
         resolve({
           valid: false,
-          error: "نوع الملف غير مدعوم. يرجى استخدام JPEG, PNG, أو WebP.",
+          error: language === 'ar' 
+            ? "نوع الملف غير مدعوم. يرجى استخدام JPEG, PNG, أو WebP." 
+            : "Unsupported file type. Please use JPEG, PNG, or WebP.",
         });
         return;
       }
@@ -452,12 +472,14 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       if (file.size > maxSize) {
         resolve({
           valid: false,
-          error: "حجم الملف كبير جدًا. الحد الأقصى هو 5 ميجابايت.",
+          error: language === 'ar' 
+            ? "حجم الملف كبير جدًا. الحد الأقصى هو 5 ميجابايت." 
+            : "File size too large. Maximum is 5MB.",
         });
         return;
       }
 
-      // Check dimensions (minimum 1200x800)
+      // Get image dimensions (but don't validate them)
       const img = new Image();
       img.src = URL.createObjectURL(file);
       img.onload = () => {
@@ -466,21 +488,18 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         const height = img.naturalHeight;
         console.log("Image dimensions:", width, height);
 
-        // Check minimum dimensions: 1200x800
-        if (width < 1200 || height < 800) {
-          resolve({
-            valid: false,
-            error: "أبعاد الصورة صغيرة جدًا. الحد الأدنى هو 1200x800 بكسل.",
-          });
-          return;
-        }
-
+        // Just return dimensions without validation
         resolve({ valid: true, width, height });
       };
 
       img.onerror = () => {
         URL.revokeObjectURL(img.src);
-        resolve({ valid: false, error: "حدث خطأ أثناء تحميل الصورة." });
+        resolve({ 
+          valid: false, 
+          error: language === 'ar' 
+            ? "حدث خطأ أثناء تحميل الصورة." 
+            : "An error occurred while loading the image." 
+        });
       };
     });
   };
@@ -540,7 +559,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
     // Check that number of images doesn't exceed max
     if (images.length + files.length > maxImages) {
-      setErrors({ general: `الحد الأقصى لعدد الصور هو ${maxImages}.` });
+      setErrors({ 
+        general: language === 'ar' 
+          ? `الحد الأقصى لعدد الصور هو ${maxImages}.` 
+          : `Maximum number of images is ${maxImages}.` 
+      });
       setProcessing(false);
       return;
     }
@@ -587,11 +610,15 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           newImages.push(validatedImage);
           hasValidImage = true;
         } else {
-          newErrors[id] = validation.error || "حدث خطأ أثناء معالجة الصورة.";
+          newErrors[id] = validation.error || (language === 'ar' 
+            ? "حدث خطأ أثناء معالجة الصورة." 
+            : "An error occurred while processing the image.");
         }
       } catch (error) {
         console.error("Error processing image:", error);
-        newErrors[id] = "حدث خطأ أثناء معالجة الصورة.";
+        newErrors[id] = language === 'ar' 
+          ? "حدث خطأ أثناء معالجة الصورة." 
+          : "An error occurred while processing the image.";
       }
     }
 
@@ -730,7 +757,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
     // Check minimum images requirement
     if (images.length < minImages) {
-      setErrors({ general: `الحد الأدنى لعدد الصور هو ${minImages}.` });
+      setErrors({ 
+        general: language === 'ar' 
+          ? `الحد الأدنى لعدد الصور هو ${minImages}.` 
+          : `Minimum number of images is ${minImages}.` 
+      });
       return;
     }
 
@@ -788,6 +819,33 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     }
   };
 
+  // Text translations
+  const texts = {
+    dragDrop: language === 'ar' ? 'اسحب وأفلت الصور هنا' : 'Drag and drop images here',
+    orClick: language === 'ar' ? 'أو انقر لاختيار الصور' : 'or click to select images',
+    fileTypes: language === 'ar' 
+      ? 'JPEG, PNG, WebP (بحد أقصى 5 ميجابايت)' 
+      : 'JPEG, PNG, WebP (max 5MB)',
+    processing: language === 'ar' ? 'جاري معالجة الصور...' : 'Processing images...',
+    uploading: language === 'ar' ? 'جاري رفع الصور...' : 'Uploading images...',
+    imagesCount: language === 'ar' ? `الصور (${images.length})` : `Images (${images.length})`,
+    deleteSelected: language === 'ar' ? `حذف ${selectedImages.length} محدد` : `Delete ${selectedImages.length} selected`,
+    selectAll: language === 'ar' ? 'تحديد الكل' : 'Select All',
+    deselectAll: language === 'ar' ? 'إلغاء تحديد الكل' : 'Deselect All',
+    uploadImages: language === 'ar' ? 'رفع الصور' : 'Upload Images',
+    uploadingBtn: language === 'ar' ? 'جاري الرفع...' : 'Uploading...',
+    instruction1: language === 'ar' 
+      ? 'انقر على أيقونة النجمة لتحديد صورة مميزة (صورة واحدة فقط)' 
+      : 'Click the star icon to set a featured image (only one)',
+    instruction2: language === 'ar' 
+      ? 'اسحب الصور من أيقونة السحب السوداء لإعادة ترتيبها' 
+      : 'Drag images from the black drag icon to reorder them',
+    instruction3: language === 'ar' 
+      ? 'انقر على أيقونة التعديل لتغيير النص البديل والعنوان والكلمات المفتاحية' 
+      : 'Click the edit icon to change alt text, caption, and keywords',
+    errors: language === 'ar' ? 'أخطاء' : 'Errors',
+  };
+
   return (
     <div className="space-y-4">
       {/* Drag and drop area */}
@@ -835,7 +893,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 ></path>
               </svg>
               <p className="text-lg font-medium text-gray-300">
-                {isUploading ? "جاري رفع الصور..." : "جاري معالجة الصور..."}
+                {isUploading ? texts.uploading : texts.processing}
               </p>
             </>
           ) : (
@@ -855,11 +913,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 />
               </svg>
               <p className="text-lg font-medium text-gray-300">
-                اسحب وأفلت الصور هنا
+                {texts.dragDrop}
               </p>
-              <p className="text-sm text-gray-500">أو انقر لاختيار الصور</p>
+              <p className="text-sm text-gray-500">{texts.orClick}</p>
               <p className="text-xs text-gray-500 mt-2">
-                JPEG, PNG, WebP (بحد أقصى 5 ميجابايت، 1200x800 بكسل كحد أدنى)
+                {texts.fileTypes}
               </p>
             </>
           )}
@@ -877,11 +935,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
               <h3 className="text-lg font-medium text-gray-300">
-                الصور ({images.length})
+                {texts.imagesCount}
               </h3>
               {images.length < minImages && (
                 <div className="text-red-500 text-sm">
-                  {`الحد الأدنى لعدد الصور هو ${minImages}.`}
+                  {language === 'ar' 
+                    ? `الحد الأدنى لعدد الصور هو ${minImages}.` 
+                    : `Minimum number of images is ${minImages}.`}
                 </div>
               )}
             </div>
@@ -894,7 +954,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                   onClick={deleteSelectedImages}
                   className="px-3 py-1.5 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
                 >
-                  {`حذف ${selectedImages.length} محدد`}
+                  {texts.deleteSelected}
                 </button>
               )}
 
@@ -903,9 +963,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                 onClick={selectAllImages}
                 className="px-3 py-1.5 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600 transition-colors"
               >
-                {selectedImages.length === images.length
-                  ? "إلغاء تحديد الكل"
-                  : "تحديد الكل"}
+                {selectedImages.length === images.length ? texts.deselectAll : texts.selectAll}
               </button>
 
               <button
@@ -918,7 +976,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                     : "bg-amber-500 text-gray-900 hover:bg-amber-600"
                 }`}
               >
-                {isUploading ? "جاري الرفع..." : "رفع الصور"}
+                {isUploading ? texts.uploadingBtn : texts.uploadImages}
               </button>
             </div>
           </div>
@@ -938,9 +996,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                   clipRule="evenodd"
                 />
               </svg>
-              <span>
-                انقر على أيقونة النجمة لتحديد صورة مميزة (صورة واحدة فقط)
-              </span>
+              <span>{texts.instruction1}</span>
             </div>
             <div className="flex items-center">
               <svg
@@ -957,7 +1013,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                   d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
                 />
               </svg>
-              <span>اسحب الصور من أيقونة السحب السوداء لإعادة ترتيبها</span>
+              <span>{texts.instruction2}</span>
             </div>
             <div className="flex items-center">
               <svg
@@ -974,10 +1030,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                   d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-3.172l-1.414-1.414z"
                 />
               </svg>
-              <span>
-                انقر على أيقونة التعديل لتغيير النص البديل والعنوان والكلمات
-                المفتاحية
-              </span>
+              <span>{texts.instruction3}</span>
             </div>
           </div>
 
@@ -1001,6 +1054,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                       onSetFeatured={setFeaturedImage}
                       isFeatured={image.isFeatured || false}
                       onEditMetadata={editImageMetadata}
+                      language={language}
                     />
                   </div>
                 ))}
@@ -1013,7 +1067,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       {/* Error messages */}
       {Object.keys(errors).length > 0 && (
         <div className="mt-4 p-4 bg-red-500/20 border border-red-500 rounded-lg animate-fadeIn">
-          <h4 className="text-red-500 font-medium mb-2">أخطاء</h4>
+          <h4 className="text-red-500 font-medium mb-2">{texts.errors}</h4>
           <ul className="text-red-500 text-sm space-y-1">
             {Object.entries(errors).map(([id, error]) => (
               <li key={id}>{error}</li>

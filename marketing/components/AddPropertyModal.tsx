@@ -114,14 +114,25 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     }
 
     // ownerPhone: string (digits only)
-    if (
-      typeof formData.ownerPhone !== "string" ||
-      !formData.ownerPhone.trim()
-    ) {
-      newErrors.ownerPhone = errorMessages.ownerPhoneRequired;
-    } else if (!/^\d+$/.test(formData.ownerPhone.replace(/[\s\-]/g, ""))) {
-      newErrors.ownerPhone = "يجب إدخال رقم هاتف مكون من أرقام فقط";
-    }
+   if (
+  typeof formData.ownerPhone !== "string" ||
+  !formData.ownerPhone.trim()
+) {
+  newErrors.ownerPhone = errorMessages.ownerPhoneRequired;
+} else {
+  // إزالة المسافات والشرطات
+  const cleanedPhone = formData.ownerPhone.replace(/[\s\-]/g, "");
+
+  // التحقق من رقم هاتف دولي أو محلي (من 8 إلى 15 رقم)
+  const phoneRegex = /^\+?\d{8,15}$/;
+
+  if (!phoneRegex.test(cleanedPhone)) {
+    newErrors.ownerPhone =
+      errorMessages.ownerPhoneInvalid ||
+      "يجب إدخال رقم هاتف صالح (من 8 إلى 15 رقم ويمكن أن يبدأ بـ +)";
+  }
+}
+
 
     // ownerEmail: string (email format, optional)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -703,7 +714,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                       <option value="">{t.selectStatus}</option>
                       <option value="للبيع">{t.forSale}</option>
                       <option value="للإيجار">{t.forRent}</option>
-                      <option value="شراكة">شراكة</option>
+                      <option value="شراكة">{t.sharing}</option>
                     </select>
                     {errors.status && (
                       <div className="text-red-500 text-sm mt-1">

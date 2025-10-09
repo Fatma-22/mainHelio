@@ -46,6 +46,7 @@ const FinishingPage: React.FC<FinishingPageProps> = ({ language }) => {
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState('');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const openModal = (title: string) => {
     setModalTitle(title);
@@ -56,8 +57,9 @@ const FinishingPage: React.FC<FinishingPageProps> = ({ language }) => {
     setIsModalOpen(false);
   };
 
-  const openLightbox = (imageUrl: string) => {
+  const openLightbox = (imageUrl: string, index: number) => {
     setLightboxImage(imageUrl);
+    setCurrentImageIndex(index);
     setLightboxOpen(true);
   };
 
@@ -66,12 +68,28 @@ const FinishingPage: React.FC<FinishingPageProps> = ({ language }) => {
     setLightboxImage('');
   };
 
+  // Navigate to next image
+  const nextImage = () => {
+    const newIndex = (currentImageIndex + 1) % portfolioItems.length;
+    setLightboxImage(portfolioItems[newIndex].imageUrl);
+    setCurrentImageIndex(newIndex);
+  };
+
+  // Navigate to previous image
+  const prevImage = () => {
+    const newIndex = (currentImageIndex - 1 + portfolioItems.length) % portfolioItems.length;
+    setLightboxImage(portfolioItems[newIndex].imageUrl);
+    setCurrentImageIndex(newIndex);
+  };
+
   // fetch portfolio items (gallery images)
   useEffect(() => {
     const fetchPortfolio = async () => {
       try {
         const items = await getPortfolioItems();
-        setPortfolioItems(items);
+        // Filter items to only include those with type "تشطيبات"
+        const filteredItems = items.filter(item => item.type === "تشطيبات");
+        setPortfolioItems(filteredItems);
       } catch (err) {
         console.error("Error fetching portfolio items:", err);
       } finally {
@@ -161,16 +179,16 @@ const FinishingPage: React.FC<FinishingPageProps> = ({ language }) => {
             </p>
           </div>
           {loading ? (
-            <p className="text-center text-gray-400">{t.loadingText || 'Loading...'}</p>
+            <p className="text-center text-gray-400">{'Loading...'}</p>
           ) : (
             <div className="flex flex-wrap justify-center gap-6">
-            {portfolioItems.map((item) => (
+            {portfolioItems.map((item, index) => (
               <div key={item.id} className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 overflow-hidden rounded-lg shadow-lg cursor-pointer">
                 <img
                   src={item.imageUrl}
                   alt={item.title || 'Portfolio item'}
                   className="w-full h-64 object-cover transform hover:scale-105 transition-transform duration-300"
-                  onClick={() => openLightbox(item.imageUrl)}
+                  onClick={() => openLightbox(item.imageUrl, index)}
                   loading="lazy" 
                 />
               </div>
@@ -184,22 +202,43 @@ const FinishingPage: React.FC<FinishingPageProps> = ({ language }) => {
       {/* Lightbox */}
       {lightboxOpen && (
         <div
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 pointer-events-auto"
           onClick={closeLightbox}
         >
+          {/* Navigation Arrows */}
+          {portfolioItems.length > 1 && (
+            <>
+              {/* زر السهم اليمين */}
+              <button
+                className="absolute right-5 text-white text-4xl font-bold z-50 bg-black/50 rounded-full w-12 h-12 flex items-center justify-center"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage(); // دايمًا اليمين = التالي
+                }}
+              >
+                {language === 'ar' ? '‹' : '›'}
+              </button>
+
+              {/* زر السهم الشمال */}
+              <button
+                className="absolute left-5 text-white text-4xl font-bold z-50 bg-black/50 rounded-full w-12 h-12 flex items-center justify-center"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage(); // دايمًا الشمال = السابق
+                }}
+              >
+                {language === 'ar' ? '›' : '‹'}
+              </button>
+            </>
+          )}
+
+          
           <img
             src={lightboxImage}
             alt="Lightbox"
             className="w-[90vw] h-[90vh] rounded-lg shadow-xl object-contain"
-            onClick={(e) => e.stopPropagation()}
             loading="lazy" 
           />
-          <button
-            className="absolute top-5 right-5 text-white text-3xl font-bold"
-            onClick={closeLightbox}
-          >
-            &times;
-          </button>
         </div>
       )}
 

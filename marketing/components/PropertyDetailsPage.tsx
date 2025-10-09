@@ -64,8 +64,8 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
     const baseUrl = window.location.href.split("#")[0];
     const propertyUrl = `${baseUrl}#/properties/${property.id}`;
     const shareData = {
-      title: property.title, // تم التعديل هنا
-      text: `${property.title} - ${property.price}`, // تم التعديل هنا
+      title: property.title,
+      text: `${property.title} - ${property.price}`,
       url: propertyUrl,
     };
 
@@ -119,7 +119,23 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
   }
 
   const isForSale =
-    (property as any).status === "For Sale" || property.status === "للبيع"; // تم التعديل هنا
+    (property as any).status === "For Sale" || property.status === "للبيع";
+
+  // Get property title based on language
+  const propertyTitle = language === 'ar' 
+    ? (property as any).title_ar || property.title 
+    : (property as any).title_en || property.title;
+    
+  // Get property description based on language
+  const propertyDescription = language === 'ar' 
+    ? (property as any).desc_ar 
+    : (property as any).desc_en;
+    
+  // Check if description is meaningful (not random text)
+  const isMeaningfulDescription = propertyDescription && 
+    propertyDescription.trim().length > 5 && 
+    !/^[a-zA-Z0-9]*$/.test(propertyDescription) &&
+    !/^[a-zA-Z0-9]{10,}$/.test(propertyDescription);
 
   return (
     <div className="bg-gray-900 text-white py-12">
@@ -127,12 +143,12 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
         {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold">{property.title}</h1>{" "}
-            {/* تم التعديل هنا */}
-            <p className="text-lg text-gray-400 mt-2">
-              {property.address}
-            </p>{" "}
-            {/* تم التعديل هنا */}
+            <h1 className="text-4xl md:text-5xl font-bold">{propertyTitle}</h1>
+            {(property as any).address && (
+              <p className="text-lg text-gray-400 mt-2">
+                {(property as any).address}
+              </p>
+            )}
           </div>
           <div className="flex-shrink-0 w-full sm:w-auto flex items-center gap-2">
             <button
@@ -164,148 +180,153 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
           {/* Left Column: Images and Map */}
           <div className="lg:col-span-2">
             {/* Combined Image & Video Gallery */}
-            <div className="mb-8">
-              <div className="relative mb-4">
-                {/* Main image or video */}
-                {mainImage &&
-                mainImage.startsWith("http") &&
-                !mainImage.includes("youtube.com") &&
-                !mainImage.includes("youtu.be") ? (
-                  <img
-                    src={mainImage}
-                    alt={property.title}
-                    className="w-full h-[500px] object-cover rounded-lg shadow-lg"
-                    loading="lazy"
-                  />
-                ) : mainImage &&
-                  (mainImage.includes("youtube.com") ||
-                    mainImage.includes("youtu.be")) ? (
-                  // If mainImage is a YouTube URL, render the video player
-                  (() => {
-                    // Try to extract YouTube video ID
-                    let videoId = "";
-                    try {
-                      let url = new URL(mainImage);
-                      if (url.hostname.includes("youtube.com")) {
-                        const params = new URLSearchParams(url.search);
-                        videoId = params.get("v") || "";
-                      } else if (url.hostname.includes("youtu.be")) {
-                        videoId = url.pathname.replace("/", "");
-                      }
-                    } catch (e) {}
-                    if (videoId) {
-                      return (
-                        <YouTubeVideoPlayer
-                          language={language}
-                          videoId={videoId}
-                          title={property?.title}
-                          width="100%"
-                          height={500}
-                          className="rounded-lg shadow-lg"
-                          autoplay={false}
-                        />
-                      );
-                    }
-                    // fallback
-                    return (
-                      <div className="w-full h-[500px] flex items-center justify-center bg-gray-800 rounded-lg shadow-lg">
-                        <span className="text-gray-400">Video unavailable</span>
-                      </div>
-                    );
-                  })()
-                ) : (
-                  <div className="w-full h-[500px] flex items-center justify-center bg-gray-800 rounded-lg shadow-lg">
-                    <span className="text-gray-400">No image or video</span>
-                  </div>
-                )}
-
-                <span
-                  className={`absolute top-4 ${
-                    language === "ar" ? "right-4" : "left-4"
-                  } text-white font-semibold px-4 py-2 rounded-md text-base ${
-                    isForSale ? "bg-green-600" : "bg-sky-600"
-                  }`}
-                >
-                  {(property as any).status === "For Sale" ||
-                  property.status === "للبيع"
-                    ? language === "ar"
-                      ? "للبيع"
-                      : "For Sale"
-                    : language === "ar"
-                    ? "للإيجار"
-                    : "For Rent"}
-                  {/* تم التعديل هنا */}
-                </span>
-              </div>
-              {(property.gallery && property.gallery.length > 0) ||
-              (property.videos && property.videos.length > 0) ? (
-                <div className="grid grid-cols-5 gap-2">
-                  {/* Images */}
-                  {property.gallery?.map((img, index) => (
+            {(property.gallery && property.gallery.length > 0) ||
+            (property.videos && property.videos.length > 0) ||
+            mainImage ? (
+              <div className="mb-8">
+                <div className="relative mb-4">
+                  {/* Main image or video */}
+                  {mainImage &&
+                  mainImage.startsWith("http") &&
+                  !mainImage.includes("youtube.com") &&
+                  !mainImage.includes("youtu.be") ? (
                     <img
-                      key={`img-${index}`}
-                      src={img?.thumbnailUrl}
-                      alt={`Thumbnail ${index + 1}`}
-                      className={`w-full h-32 object-cover rounded-md cursor-pointer border-2 transition-all ${
-                        mainImage === img?.previewUrl
-                          ? "border-amber-500"
-                          : "border-transparent hover:border-amber-400"
-                      }`}
-                      onClick={() => setMainImage(img?.previewUrl)}
+                      src={mainImage}
+                      alt={propertyTitle}
+                      className="w-full h-[500px] object-cover rounded-lg shadow-lg"
                       loading="lazy"
                     />
-                  ))}
-                  {/* Videos */}
-                  {property.videos?.map((video, vIdx) => {
-                    return (
-                      <div
-                        key={`vid-${vIdx}`}
-                        className={`relative w-full h-32 rounded-md cursor-pointer border-2 transition-all overflow-hidden ${
-                          mainImage === video.video_url
+                  ) : mainImage &&
+                    (mainImage.includes("youtube.com") ||
+                      mainImage.includes("youtu.be")) ? (
+                    // If mainImage is a YouTube URL, render the video player
+                    (() => {
+                      // Try to extract YouTube video ID
+                      let videoId = "";
+                      try {
+                        let url = new URL(mainImage);
+                        if (url.hostname.includes("youtube.com")) {
+                          const params = new URLSearchParams(url.search);
+                          videoId = params.get("v") || "";
+                        } else if (url.hostname.includes("youtu.be")) {
+                          videoId = url.pathname.replace("/", "");
+                        }
+                      } catch (e) {}
+                      if (videoId) {
+                        return (
+                          <YouTubeVideoPlayer
+                            language={language}
+                            videoId={videoId}
+                            title={propertyTitle}
+                            width="100%"
+                            height={500}
+                            className="rounded-lg shadow-lg"
+                            autoplay={false}
+                          />
+                        );
+                      }
+                      // fallback
+                      return (
+                        <div className="w-full h-[500px] flex items-center justify-center bg-gray-800 rounded-lg shadow-lg">
+                          <span className="text-gray-400">Video unavailable</span>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="w-full h-[500px] flex items-center justify-center bg-gray-800 rounded-lg shadow-lg">
+                      <span className="text-gray-400">No image or video</span>
+                    </div>
+                  )}
+
+                  <span
+                    className={`absolute top-4 ${
+                      language === "ar" ? "right-4" : "left-4"
+                    } text-white font-semibold px-4 py-2 rounded-md text-base ${
+                      isForSale ? "bg-green-600" : "bg-sky-600"
+                    }`}
+                  >
+                    {(property as any).status === "For Sale" ||
+                    property.status === "للبيع"
+                      ? language === "ar"
+                        ? "للبيع"
+                        : "For Sale"
+                      : language === "ar"
+                      ? "للإيجار"
+                      : "For Rent"}
+                  </span>
+                </div>
+                {(property.gallery && property.gallery.length > 0) ||
+                (property.videos && property.videos.length > 0) ? (
+                  <div className="grid grid-cols-5 gap-2">
+                    {/* Images */}
+                    {property.gallery?.map((img, index) => (
+                      <img
+                        key={`img-${index}`}
+                        src={img?.thumbnailUrl}
+                        alt={`Thumbnail ${index + 1}`}
+                        className={`w-full h-32 object-cover rounded-md cursor-pointer border-2 transition-all ${
+                          mainImage === img?.previewUrl
                             ? "border-amber-500"
                             : "border-transparent hover:border-amber-400"
                         }`}
-                        onClick={() => setMainImage(video.video_url)}
-                        title={"YouTube Video"}
-                      >
-                        <img
-                          src={
-                            video?.thumbnail_url ||
-                            "/images/video-placeholder.png"
-                          }
-                          alt={`Video Thumbnail ${vIdx + 1}`}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                        <span className="absolute inset-0 flex items-center justify-center">
-                          <svg
-                            className="w-10 h-10 text-white bg-black bg-opacity-50 rounded-full p-2"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
+                        onClick={() => setMainImage(img?.previewUrl)}
+                        loading="lazy"
+                      />
+                    ))}
+                    {/* Videos */}
+                    {property.videos?.map((video, vIdx) => {
+                      return (
+                        <div
+                          key={`vid-${vIdx}`}
+                          className={`relative w-full h-32 rounded-md cursor-pointer border-2 transition-all overflow-hidden ${
+                            mainImage === video.video_url
+                              ? "border-amber-500"
+                              : "border-transparent hover:border-amber-400"
+                          }`}
+                          onClick={() => setMainImage(video.video_url)}
+                          title={"YouTube Video"}
+                        >
+                          <img
+                            src={
+                              video?.thumbnail_url ||
+                              "/images/video-placeholder.png"
+                            }
+                            alt={`Video Thumbnail ${vIdx + 1}`}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                          <span className="absolute inset-0 flex items-center justify-center">
+                            <svg
+                              className="w-10 h-10 text-white bg-black bg-opacity-50 rounded-full p-2"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
-            {/* Description */}
-            <div className="bg-gray-800 p-8 rounded-lg border border-gray-700 mb-8">
-              <h2 className="text-2xl font-bold text-amber-500 mb-4">
-                {t.propertyDetailsPage?.description}
-              </h2>
-              <p className="text-gray-300 leading-relaxed whitespace-pre-line">
-                {property.description ||
-                  (t.propertyDetailsPage as any)?.noDescription}
-              </p>{" "}
-              {/* تم التعديل هنا */}
-            </div>
+            {/* Description - Only show if there's meaningful content */}
+            {isMeaningfulDescription && (
+              <div className="bg-gray-800 p-8 rounded-lg border border-gray-700 mb-8">
+                <h2 className="text-2xl font-bold text-amber-500 mb-4">
+                  {t.propertyDetailsPage?.description}
+                </h2>
+                <p className="text-gray-300 leading-relaxed whitespace-pre-line">
+                  {propertyDescription}
+                </p>
+              </div>
+            )}
 
+            {/* Amenities */}
             {(property as any).amenities &&
+              Array.isArray((property as any).amenities) &&
               (property as any).amenities.length > 0 && (
                 <div className="bg-gray-800 p-8 rounded-lg border border-gray-700 mb-8">
                   <h2 className="text-2xl font-bold text-amber-500 mb-6">
@@ -322,15 +343,16 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
                 </div>
               )}
 
-            {/* Map */}
-            <div className="bg-gray-800 p-8 rounded-lg border border-gray-700">
-              <h2 className="text-2xl font-bold text-amber-500 mb-4">
-                {t.propertyDetailsPage?.mapLocation}
-              </h2>
-              <div className="overflow-hidden rounded-lg">
-                {property.latitude && property.longitude ? (
+            {/* Map - Only show if latitude and longitude exist and are not zero */}
+            {(property as any).lat && (property as any).lng && 
+             (property as any).lat !== 0 && (property as any).lng !== 0 && (
+              <div className="bg-gray-800 p-8 rounded-lg border border-gray-700">
+                <h2 className="text-2xl font-bold text-amber-500 mb-4">
+                  {t.propertyDetailsPage?.mapLocation}
+                </h2>
+                <div className="overflow-hidden rounded-lg">
                   <iframe
-                    src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d55262.31741482358!2d${property.longitude}!3d${property.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzDCsDA3JzIwLjgiTiAzMcKwMzYnNDAuMCJF!5e0!3m2!1sen!2seg!4v1678886543210`}
+                    src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d55262.31741482358!2d${(property as any).lng}!3d${(property as any).lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzDCsDA3JzIwLjgiTiAzMcKwMzYnNDAuMCJF!5e0!3m2!1sen!2seg!4v1678886543210`}
                     width="100%"
                     height="450"
                     style={{ border: 0 }}
@@ -338,19 +360,9 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
                   ></iframe>
-                ) : (
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d27625.686876055146!2d31.60533565!3d30.122421899999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14581bb448a04499%3A0x3977a7c06ac29759!2sNew%20Heliopolis%2C%20El%20Shorouk%2C%20Cairo%20Governorate!5e0!3m2!1sen!2seg!4v1678886543210!5m2!1sen!2seg"
-                    width="100%"
-                    height="450"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  ></iframe>
-                )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Right Column: Price and Details */}
@@ -358,11 +370,11 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
             <div className="sticky top-28 bg-gray-800 p-8 rounded-lg border border-gray-700">
               <p className="text-4xl font-bold text-amber-500 mb-6">
                 {property.price}
-              </p>{" "}
+              </p>
               <div className="flex justify-around items-center text-gray-300 border-y border-gray-700 py-6 mb-6">
                 <div className="flex flex-col items-center gap-2">
                   <BedIcon className="w-8 h-8 text-gray-400" />
-                  <span className="font-bold">{property.bedrooms}</span>{" "}
+                  <span className="font-bold">{property.bedrooms}</span>
                   <span>{t.propertyDetailsPage?.bedrooms}</span>
                 </div>
 
@@ -371,11 +383,10 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
                     (property as any).type === "villa" ||
                     property.type === "شقة" ||
                     property.type === "فيلا") &&
-                  property.finish && (
+                  (property as any).finish && (
                     <div className="flex flex-col items-center gap-2">
                       <Settings className="w-8 h-8 text-gray-400" />
-
-                      <span className="font-bold">{property.finish}</span>
+                      <span className="font-bold">{(property as any).finish}</span>
                       <span>
                         {(t.propertyDetailsPage as any)?.finishing ||
                           (language === "ar" ? "التشطيب" : "Finishing")}
@@ -385,8 +396,7 @@ const PropertyDetailsPage: React.FC<PropertyDetailsPageProps> = ({
 
                 <div className="flex flex-col items-center gap-2">
                   <AreaIcon className="w-8 h-8 text-gray-400" />
-                  <span className="font-bold">{property.area} m²</span>{" "}
-                  {/* تم التعديل هنا */}
+                  <span className="font-bold">{property.area} m²</span>
                   <span>{t.propertyDetailsPage?.area}</span>
                 </div>
               </div>
