@@ -218,7 +218,7 @@ export default function PropertyVideoManager({
       ) : isAdding ? null : (
         <div className="animate-in fade-in-50 flex flex-col items-center justify-center rounded-md border border-dashed p-8 text-center">
           <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-            <div className="bg-muted flex size-20 items-center justify-center rounded-full">
+            <div className="bg-muted flex items-center justify-center rounded-full">
               <InboxIcon className="text-muted-foreground size-10" />
             </div>
             <h2 className="text-foreground mt-6 text-xl font-semibold">

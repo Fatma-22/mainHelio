@@ -50,6 +50,11 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const showBedroomAndBathFields =
+    formData.type === "شقة" || formData.type === "فيلا";
+  const showFinishField =
+    showBedroomAndBathFields && formData.status === "للبيع";
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -163,7 +168,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
 
     // bedrooms: string (should be integer >= 0, required for "شقة" and "فيلا")
     // bathrooms: string (should be integer >= 0, required for "شقة" and "فيلا")
-    if (formData.type === "شقة" || formData.type === "فيلا") {
+    if (showBedroomAndBathFields) {
       // bedrooms
       if (typeof formData.bedrooms !== "string" || !formData.bedrooms) {
         newErrors.bedrooms = errorMessages.bedroomsRequired;
@@ -253,7 +258,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     }
 
     // finish: string (required for "شقة"/"فيلا")
-    if (formData.type === "شقة" || formData.type === "فيلا") {
+    if (showFinishField) {
       if (typeof formData.finish !== "string" || !formData.finish) {
         newErrors.finish = errorMessages.finishRequired;
       }
@@ -412,11 +417,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     }
   };
 
-  const showBedroomAndBathFields =
-    formData.type === "شقة" || formData.type === "فيلا";
-  const showFinishField =
-    showBedroomAndBathFields && formData.status === "للبيع";
-
   return (
     <div
       className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center p-4 transition-opacity duration-300"
@@ -455,7 +455,52 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           <h2 className="text-3xl font-bold text-amber-500 mb-6 text-center">
             {t.title}
           </h2>
-
+          <div className="p-4 my-4 bg-blue-900/20 border border-blue-700 rounded-lg space-y-2">
+            <div className="flex items-center gap-2 mb-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-blue-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span className="text-blue-400 font-medium">
+                {language === "ar" ? "ملاحظات هامة" : "Important Notes"}
+              </span>
+            </div>
+            <ul className="list-disc rtl:pr-4 ltr:pl-4 text-sm text-gray-300 space-y-1">
+              <li>
+                {language === "ar"
+                  ? "ستحتاج اثبات ملكية العقار قبل الموافقة على الطلب."
+                  : "You will need to provide proof of property ownership before your request is approved."}
+              </li>
+              <li>
+                {language === "ar" ? (
+                  <>
+                    السادة أصحاب مكاتب العقارات أنتم مرحب بكم، يرجى التواصل من
+                    خلال{" "}
+                    <a href="/contact" className="text-blue-400 underline">
+                      تواصل معنا
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    Real estate offices are welcome. Please contact us via{" "}
+                    <a href="/contact" className="text-blue-400 underline">
+                      Contact Us
+                    </a>
+                  </>
+                )}
+              </li>
+            </ul>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-6">
             <fieldset disabled={isSubmitting} className="disabled:opacity-75">
               <div className="border-b border-gray-700 pb-6">
@@ -538,7 +583,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                 </div>
               </div>
               <div className="border-b border-gray-700 pb-6">
-                <h3 className="text-lg font-semibold text-gray-100 mb-4">
+                <h3 className="text-lg font-semibold text-gray-100 my-4">
                   {t.propertyDetails}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -780,10 +825,31 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               </div>
 
               <div id="propertyImages">
-                <h3 className="text-lg font-semibold text-gray-100 mb-4">
+                <h3 className="text-lg font-semibold text-gray-100 my-4">
                   {t.imagesAndPlan}
                 </h3>
                 <div className="space-y-4">
+                  <FormField label={t.listingPlan} id="listingPlan">
+                    <select
+                      id="listingPlan"
+                      className={`${selectClasses} ${
+                        errors.listingPlan ? "border-red-500" : ""
+                      }`}
+                      required
+                      value={formData.listingPlan}
+                      onChange={handleChange}
+                    >
+                      <option value="">{t.selectPlan}</option>
+                      <option value="paid">{t.paidListing}</option>
+                      <option value="commission">{t.commissionListing}</option>
+                    </select>
+                    {errors.listingPlan && (
+                      <div className="text-red-500 text-sm mt-1">
+                        {errors.listingPlan}
+                      </div>
+                    )}
+                  </FormField>
+
                   <FormField label={t.uploadImages} id="propertyImages">
                     <div className="relative">
                       {isSubmitting && (
@@ -807,84 +873,25 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                       </div>
                     )}
                   </FormField>
-                  <FormField label={t.listingPlan} id="listingPlan">
-                    <select
-                      id="listingPlan"
-                      className={`${selectClasses} ${
-                        errors.listingPlan ? "border-red-500" : ""
-                      }`}
-                      required
-                      value={formData.listingPlan}
-                      onChange={handleChange}
-                    >
-                      <option value="">{t.selectPlan}</option>
-                      <option value="paid">{t.paidListing}</option>
-                      <option value="commission">{t.commissionListing}</option>
-                    </select>
-                    {errors.listingPlan && (
-                      <div className="text-red-500 text-sm mt-1">
-                        {errors.listingPlan}
-                      </div>
-                    )}
-                  </FormField>
                 </div>
               </div>
 
               <div className="mt-6">
-                <PropertyVideoManager
-                  language={language}
-                  loading={isSubmitting}
-                  initialVideos={formData?.videos ?? []}
-                  onVideosChange={(videos) => {
-                    setFormData({ ...formData, videos });
-                  }}
-                />
-              </div>
-              <div className="p-4 mt-4 bg-blue-900/20 border border-blue-700 rounded-lg space-y-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-blue-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <span className="text-blue-400 font-medium">
-                    {language === "ar" ? "ملاحظات هامة" : "Important Notes"}
-                  </span>
-                </div>
-                <ul className="list-disc rtl:pr-4 ltr:pl-4 text-sm text-gray-300 space-y-1">
-                  <li>
-                    {language === "ar"
-                      ? "ستحتاج اثبات ملكية العقار قبل الموافقة على الطلب."
-                      : "You will need to provide proof of property ownership before your request is approved."}
-                  </li>
-                  <li>
-                    {language === "ar" ? (
-                      <>
-                        السادة أصحاب مكاتب العقارات أنتم مرحب بكم، يرجى التواصل
-                        من خلال{" "}
-                        <a href="/contact" className="text-blue-400 underline">
-                          تواصل معنا
-                        </a>
-                      </>
-                    ) : (
-                      <>
-                        Real estate offices are welcome. Please contact us via{" "}
-                        <a href="/contact" className="text-blue-400 underline">
-                          Contact Us
-                        </a>
-                      </>
-                    )}
-                  </li>
-                </ul>
+                <FormField label={t.addVideos} id="videos">
+                  <PropertyVideoManager
+                    language={language}
+                    loading={isSubmitting}
+                    initialVideos={formData?.videos ?? []}
+                    onVideosChange={(videos) => {
+                      setFormData({ ...formData, videos });
+                    }}
+                  />
+                  {errors.videos && (
+                    <div className="text-red-500 text-sm mt-1">
+                      {errors.videos}
+                    </div>
+                  )}
+                </FormField>
               </div>
 
               <div className="pt-6 flex justify-end">

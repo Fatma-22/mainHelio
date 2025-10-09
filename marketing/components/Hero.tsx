@@ -4,6 +4,9 @@ import { SearchIcon } from "./icons/Icons";
 import type { Language } from "../App";
 import { translations } from "../data/translations";
 import { SiteContent } from "../types";
+import hero01 from "../public/imgs/hero-01.jpg";
+import hero02 from "../public/imgs/hero-02.jpg";
+import hero03 from "../public/imgs/hero-03.jpg";
 
 interface HeroProps {
   language: Language;
@@ -22,12 +25,15 @@ const Hero: React.FC<HeroProps> = ({ language, siteContent }) => {
 
   // Array of background images
   const backgroundImages = [
-    "https://onlyhelio.com/images/background.jpg",
-    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2053&q=80",
-    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    // "https://images.unsplash.com/photo-1600607687644-c7171b42498b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+    hero03,
+    hero01,
+    hero02,
+    // "https://onlyhelio.com/images/background.jpg",
+    // "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+    // "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2053&q=80",
+    // "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+    // "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+    // // "https://images.unsplash.com/photo-1600607687644-c7171b42498b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
   ];
 
   // تحديد حدود السعر بناءً على التبويب (بيع أو إيجار)

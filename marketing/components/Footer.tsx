@@ -120,11 +120,19 @@ const Footer: React.FC<FooterProps> = ({
               </li>
               <li className="flex items-center gap-3">
                 <span>📞</span>
-                <span dir="ltr">{contactPhone}</span>
+                <a
+                  href={`tel:${contactPhone}`}
+                  dir="ltr"
+                  className="hover:underline"
+                >
+                  {contactPhone}
+                </a>
               </li>
               <li className="flex items-center gap-3">
                 <span>✉️</span>
-                <span>{contactEmail}</span>
+                <a href={`mailto:${contactEmail}`} className="hover:underline">
+                  {contactEmail}
+                </a>
               </li>
               {workingHours && (
                 <li className="flex items-center gap-3">

@@ -167,7 +167,7 @@ const App: React.FC = () => {
             language={language}
           />
         )}
-        <Chatbot language={language} />
+        {/* <Chatbot language={language} /> */}
         <AlertManager position="top-center" language={language} />
       </div>
     </FavoritesProvider>
