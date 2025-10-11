@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import type { AdminUser, UserRole } from '../types';
 import { getStaff, createStaff, updateStaff, deleteStaff } from '../services/staffService';
@@ -44,6 +43,12 @@ const UserModal: React.FC<{
     password: '',
     roleId: user?.roleId || 1, // خزن id
   });
+  const [errors, setErrors] = useState({
+    name: '',
+    email: '',
+    password: '',
+    roleId: '',
+  });
 
   useEffect(() => {
     if (user) {
@@ -56,6 +61,7 @@ const UserModal: React.FC<{
     } else {
       setFormData({ name: '', email: '', roleId: 1, password: '' });
     }
+    setErrors({ name: '', email: '', password: '', roleId: '' });
   }, [user]);
 
   useEffect(() => {
@@ -66,8 +72,54 @@ const UserModal: React.FC<{
 
   if (!isOpen) return null;
 
+  const validateForm = () => {
+    let isValid = true;
+    const newErrors = { name: '', email: '', password: '', roleId: '' };
+
+    // فالديشن الاسم
+    if (!formData.name.trim()) {
+      newErrors.name = 'الاسم مطلوب';
+      isValid = false;
+    }
+
+    // فالديشن الإيميل
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      newErrors.email = 'البريد الإلكتروني مطلوب';
+      isValid = false;
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'البريد الإلكتروني غير صحيح';
+      isValid = false;
+    }
+
+    // فالديشن كلمة المرور
+    if (!user && !formData.password) {
+      newErrors.password = 'كلمة المرور مطلوبة';
+      isValid = false;
+    } else if (formData.password && formData.password.length < 8) {
+      newErrors.password = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+      isValid = false;
+    } else if (formData.password && !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      newErrors.password = 'كلمة المرور يجب أن تحتوي على حرف كبير وحرف صغير ورقم';
+      isValid = false;
+    }
+
+    // فالديشن الصلاحية
+    if (!formData.roleId) {
+      newErrors.roleId = 'الصلاحية مطلوبة';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
 
     const payload: Omit<AdminUser, "id" | "lastLogin"> & {
       id?: number;
@@ -91,11 +143,25 @@ const UserModal: React.FC<{
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">الاسم الكامل</label>
-            <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-gray-700 rounded-lg p-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none" required />
+            <input 
+              type="text" 
+              value={formData.name} 
+              onChange={e => setFormData({ ...formData, name: e.target.value })} 
+              className={`w-full bg-gray-700 rounded-lg p-3 border ${errors.name ? 'border-red-500' : 'border-gray-600'} focus:ring-2 focus:ring-blue-500 outline-none`} 
+              required 
+            />
+            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">البريد الإلكتروني</label>
-            <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full bg-gray-700 rounded-lg p-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none" required />
+            <input 
+              type="email" 
+              value={formData.email} 
+              onChange={e => setFormData({ ...formData, email: e.target.value })} 
+              className={`w-full bg-gray-700 rounded-lg p-3 border ${errors.email ? 'border-red-500' : 'border-gray-600'} focus:ring-2 focus:ring-blue-500 outline-none`} 
+              required 
+            />
+            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">كلمة المرور</label>
@@ -103,23 +169,31 @@ const UserModal: React.FC<{
               type="password"
               value={formData.password}
               onChange={e => setFormData({ ...formData, password: e.target.value })}
-              className="w-full bg-gray-700 rounded-lg p-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+              className={`w-full bg-gray-700 rounded-lg p-3 border ${errors.password ? 'border-red-500' : 'border-gray-600'} focus:ring-2 focus:ring-blue-500 outline-none`}
               placeholder={user ? 'اتركه فارغًا لعدم التغيير' : 'كلمة مرور قوية'}
               required={!user}
             />
+            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+            {!user && !errors.password && (
+              <p className="text-gray-400 text-xs mt-1">يجب أن تحتوي على 8 أحرف على الأقل مع حرف كبير وحرف صغير ورقم</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">الصلاحية</label>
-            <select value={formData.roleId}  onChange={e => setFormData({ ...formData, roleId: Number(e.target.value) })}
-              className="w-full bg-gray-700 rounded-lg p-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
-                <option value={1}>مدير عام</option>
-                <option value={2}>مندوب مبيعات</option>
-                <option value={3}>محرر محتوى</option>
-                <option value={4}>مسؤل مبيعات العقارات</option>
-                <option value={5}>مسؤل مبيعات التشطيبات</option>
-                <option value={6}>مسؤل مبيعات الديكورات والتحف</option>
-                <option value={7}>منسق</option>
-              </select>
+            <select 
+              value={formData.roleId}  
+              onChange={e => setFormData({ ...formData, roleId: Number(e.target.value) })}
+              className={`w-full bg-gray-700 rounded-lg p-3 border ${errors.roleId ? 'border-red-500' : 'border-gray-600'} focus:ring-2 focus:ring-blue-500 outline-none`}
+            >
+              <option value={1}>مدير عام</option>
+              <option value={2}>مندوب مبيعات</option>
+              <option value={3}>محرر محتوى</option>
+              <option value={4}>مسؤل مبيعات العقارات</option>
+              <option value={5}>مسؤل مبيعات التشطيبات</option>
+              <option value={6}>مسؤل مبيعات الديكورات والتحف</option>
+              <option value={7}>منسق</option>
+            </select>
+            {errors.roleId && <p className="text-red-500 text-sm mt-1">{errors.roleId}</p>}
           </div>
           <div className="pt-6 flex justify-end gap-4">
             <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">إلغاء</button>

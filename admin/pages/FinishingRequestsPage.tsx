@@ -38,6 +38,7 @@ const FinishingRequestsPage: React.FC<FinishingRequestsPageProps> = ({ showToast
   const [selectedStatus, setSelectedStatus] = useState<FinishingRequestStatus>('جديد');
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [currentNoteIndex, setCurrentNoteIndex] = useState(0);
   
   // 🔹 جلب البيانات من الـ API
   const fetchData = async () => {
@@ -74,6 +75,7 @@ const FinishingRequestsPage: React.FC<FinishingRequestsPageProps> = ({ showToast
   const handleSelectRequest = (request: FinishingRequest) => {
     setSelectedRequest(request);
     setSelectedStatus(request.status);
+    setCurrentNoteIndex(0); // إعادة تعيين مؤشر الملاحظة عند اختيار طلب جديد
     setNoteInput('');
   };
   
@@ -112,6 +114,9 @@ const FinishingRequestsPage: React.FC<FinishingRequestsPageProps> = ({ showToast
       // تحديث الطلب المحدد
       setSelectedRequest(updated);
       setNoteInput('');
+      // الانتقال إلى الملاحظة الجديدة بعد إضافتها
+      const notes = parseNotes(updatedNotes);
+      setCurrentNoteIndex(notes.length - 1);
       
       showToast('تم تحديث الحالة وإضافة الملاحظة بنجاح', 'success');
     } catch (error) {
@@ -127,12 +132,43 @@ const FinishingRequestsPage: React.FC<FinishingRequestsPageProps> = ({ showToast
     showToast('تم تصدير البيانات بنجاح', 'success');
   };
   
-  // دالة لحساب عدد الملاحظات
-  const getNotesCount = (notes: string | undefined): number => {
-    if (!notes || notes.trim() === '') return 0;
-    // تقسيم الملاحظات على الفاصل "---" الذي يفصل بين الملاحظات
+  // دالة لتحليل الملاحظات وعرضها بشكل منفصل
+  const parseNotes = (notes: string | undefined): Array<{ date: string; content: string }> => {
+    if (!notes || notes.trim() === '') return [];
+    
     const notesArray = notes.split('---').filter(note => note.trim() !== '');
-    return notesArray.length;
+    
+    return notesArray.map(note => {
+      const trimmedNote = note.trim();
+      const dateMatch = trimmedNote.match(/^(\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{1,2}:\d{1,2} (ص|م)):/);
+      
+      if (dateMatch) {
+        const date = dateMatch[1];
+        const content = trimmedNote.substring(dateMatch[0].length).trim();
+        return { date, content };
+      } else {
+        return { date: '', content: trimmedNote };
+      }
+    });
+  };
+
+  // دالة للتنقل بين الملاحظات
+  const navigateNotes = (direction: 'prev' | 'next') => {
+    if (!selectedRequest) return;
+    
+    const notes = parseNotes(selectedRequest.notes);
+    if (notes.length === 0) return;
+    
+    if (direction === 'next') {
+      setCurrentNoteIndex(prev => (prev + 1) % notes.length);
+    } else {
+      setCurrentNoteIndex(prev => (prev - 1 + notes.length) % notes.length);
+    }
+  };
+
+  // دالة للقفز إلى ملاحظة محددة
+  const jumpToNote = (index: number) => {
+    setCurrentNoteIndex(index);
   };
 
   // عرض حالة التحميل
@@ -144,10 +180,13 @@ const FinishingRequestsPage: React.FC<FinishingRequestsPageProps> = ({ showToast
     );
   }
 
+  const notes = selectedRequest ? parseNotes(selectedRequest.notes) : [];
+  const currentNote = notes[currentNoteIndex];
+
   return (
     <div className="flex h-[calc(100vh-60px)] bg-gray-800 rounded-xl shadow-lg overflow-hidden">
       {/* Request List */}
-      <div className="w-1/3 border-l border-gray-700 flex flex-col">
+      <div className="w-1/4 border-l border-gray-700 flex flex-col">
         <div className="p-4 border-b border-gray-700 bg-gray-750">
           <div className="flex justify-between items-center">
              <h2 className="text-xl font-bold text-white">طلبات التشطيب ({filteredRequests.length})</h2>
@@ -208,7 +247,7 @@ const FinishingRequestsPage: React.FC<FinishingRequestsPageProps> = ({ showToast
       </div>
       
       {/* Request Viewer */}
-      <div className="w-2/3 flex flex-col">
+      <div className="w-3/4 flex flex-col">
         {selectedRequest ? (
           <>
             <div className="p-4 border-b border-gray-700 bg-gray-750">
@@ -224,88 +263,155 @@ const FinishingRequestsPage: React.FC<FinishingRequestsPageProps> = ({ showToast
               </div>
             </div>
             
-            <div className="p-6 overflow-y-auto flex-1 flex flex-col">
-              <div className="mb-6">
-                <h4 className="text-md font-bold text-white mb-2">نوع الخدمة</h4>
-                <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-700">
-                  <p className="text-gray-300 font-semibold">{selectedRequest.type}</p>
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* قسم الرسالة والملاحظات */}
+              <div className="flex-1 flex overflow-hidden p-6 gap-6">
+                {/* قسم الطلب */}
+                <div className="w-2/5 flex flex-col">
+                  <h4 className="text-md font-bold text-white mb-2">تفاصيل الطلب</h4>
+                  <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 flex-1 overflow-y-auto space-y-4">
+                    <div>
+                      <p className="text-sm text-gray-400 mb-1">نوع الخدمة</p>
+                      <p className="text-gray-300 font-semibold">{selectedRequest.type}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400 mb-1">تفاصيل الطلب</p>
+                      <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                        {selectedRequest.details}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="mb-6">
-                <h4 className="text-md font-bold text-white mb-2">تفاصيل الطلب</h4>
-                <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                    {selectedRequest.details}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex-1 flex flex-col min-h-0">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-md font-bold text-white">الملاحظات السابقة</h4>
-                  <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
-                    {getNotesCount(selectedRequest.notes)} ملاحظة
-                  </span>
-                </div>
-                <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 flex-1 overflow-y-auto">
-                  {selectedRequest.notes ? (
-                    <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap">
-                      {selectedRequest.notes}
-                    </p>
-                  ) : (
-                    <p className="text-gray-500 italic">لا توجد ملاحظات سابقة</p>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-4 border-t border-gray-700 bg-gray-800/50">
-              <h4 className="text-md font-bold text-white mb-2">إضافة ملاحظة جديدة وتحديث الحالة</h4>
-              <div className="relative">
-                <textarea 
-                  className="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                  rows={4}
-                  value={noteInput}
-                  onChange={e => setNoteInput(e.target.value)}
-                  placeholder="أضف ملاحظة لتسهيل المتابعة..."
-                ></textarea>
-              </div>
-              
-              <div className="flex justify-between items-center mt-4">
-                <button 
-                  onClick={handleAddNoteWithStatus} 
-                  disabled={loading || !noteInput.trim()}
-                  className={`bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 ${
-                    (loading || !noteInput.trim()) ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {loading ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                      جاري التحديث...
-                    </>
-                  ) : (
-                    <>
-                      <span>تحديث الحالة وإضافة ملاحظة</span>
-                    </>
-                  )}
-                </button>
                 
-                <div className="flex items-center gap-2">
-                  <label htmlFor="status" className="text-sm text-gray-400">الحالة الجديدة:</label>
-                  <select
-                    id="status"
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value as FinishingRequestStatus)}
-                    className="bg-gray-700 text-white rounded-lg p-2 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                {/* قسم الملاحظات - مع نظام تنقل متقدم */}
+                <div className="w-3/5 flex flex-col">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-md font-bold text-white">الملاحظات</h4>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
+                        {notes.length} ملاحظة
+                      </span>
+                      {notes.length > 1 && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => navigateNotes('prev')}
+                            className="p-1 rounded hover:bg-gray-700 transition-colors"
+                            title="الملاحظة السابقة"
+                          >
+                           
+                          </button>
+                          <span className="text-xs text-gray-400">
+                            {currentNoteIndex + 1} / {notes.length}
+                          </span>
+                          <button
+                            onClick={() => navigateNotes('next')}
+                            className="p-1 rounded hover:bg-gray-700 transition-colors"
+                            title="الملاحظة التالية"
+                          >
+                            
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-1 overflow-hidden gap-4">
+                    {/* فهرس الملاحظات */}
+                    <div className="w-1/4 bg-gray-900/50 rounded-lg border border-gray-700 overflow-y-auto">
+                      <div className="p-2 space-y-1">
+                        {notes.map((note, index) => (
+                          <button
+                            key={index}
+                            onClick={() => jumpToNote(index)}
+                            className={`w-full text-right p-2 rounded text-sm transition-colors ${
+                              index === currentNoteIndex
+                                ? 'bg-blue-500/20 text-blue-400'
+                                : 'hover:bg-gray-700/50 text-gray-400'
+                            }`}
+                          >
+                            <div className="truncate">{note.date || 'ملاحظة'}</div>
+                            <div className="text-xs text-gray-500 truncate">
+                              {note.content.substring(0, 30)}...
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* عرض الملاحظة الحالية */}
+                    <div className="flex-1 bg-gray-900/50 p-4 rounded-lg border border-gray-700 overflow-y-auto">
+                      {currentNote ? (
+                        <div className="space-y-3">
+                          {currentNote.date && (
+                            <div className="flex items-center">
+                              <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
+                                
+                                <span className="mr-1">{currentNote.date}</span>
+                              </span>
+                            </div>
+                          )}
+                          <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                            {currentNote.content}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <p className="text-gray-500 italic">لا توجد ملاحظات سابقة</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* قسم إضافة ملاحظة جديدة وتحديث الحالة */}
+              <div className="p-4 border-t border-gray-700 bg-gray-800/50">
+                <h4 className="text-md font-bold text-white mb-2">إضافة ملاحظة جديدة وتحديث الحالة</h4>
+                <div className="relative mb-4">
+                  <textarea 
+                    className="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                    rows={3}
+                    value={noteInput}
+                    onChange={e => setNoteInput(e.target.value)}
+                    placeholder="أضف ملاحظة لتسهيل المتابعة..."
+                  ></textarea>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <button 
+                    onClick={handleAddNoteWithStatus} 
+                    disabled={loading || !noteInput.trim()}
+                    className={`bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 ${
+                      (loading || !noteInput.trim()) ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   >
-                    <option>جديد</option>
-                    <option>تم التواصل</option>
-                    <option>قيد التنفيذ</option>
-                    <option>مكتمل</option>
-                    <option>ملغي</option>
-                  </select>
+                    {loading ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        جاري التحديث...
+                      </>
+                    ) : (
+                      <>
+                        <span>تحديث الحالة وإضافة ملاحظة</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="status" className="text-sm text-gray-400">الحالة الجديدة:</label>
+                    <select
+                      id="status"
+                      value={selectedStatus}
+                      onChange={(e) => setSelectedStatus(e.target.value as FinishingRequestStatus)}
+                      className="bg-gray-700 text-white rounded-lg p-2 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option>جديد</option>
+                      <option>تم التواصل</option>
+                      <option>قيد التنفيذ</option>
+                      <option>مكتمل</option>
+                      <option>ملغي</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>

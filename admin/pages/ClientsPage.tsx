@@ -21,6 +21,11 @@ const ClientModal: React.FC<{
     email: '',
     notes: '',
   });
+  
+  // إضافة حالة لرسائل الخطأ
+  const [errors, setErrors] = useState({
+    phone: '',
+  });
 
   useEffect(() => {
     if (client) {
@@ -30,8 +35,11 @@ const ClientModal: React.FC<{
         email: client.email || '', 
         notes: client.notes || '' 
       });
+      // إعادة تعيين الأخطاء عند فتح النموذج
+      setErrors({ phone: '' });
     } else {
       setFormData({ name: '', phone: '', email: '', notes: '' });
+      setErrors({ phone: '' });
     }
   }, [client]);
 
@@ -45,8 +53,41 @@ const ClientModal: React.FC<{
 
   if (!isOpen) return null;
 
+  // دالة للتحقق من صحة رقم الهاتف
+  const validatePhone = (phone: string) => {
+    // إزالة أي مسافات أو أحرف غير رقمية
+    const cleanedPhone = phone.replace(/\D/g, '');
+    
+    // التحقق من أن الرقم يبدأ بـ 01 ويحتوي على 11 رقمًا (للأرقام المصرية)
+    const phoneRegex = /^01[0-9]{9}$/;
+    
+    if (!phoneRegex.test(cleanedPhone)) {
+      return 'رقم الهاتف غير صالح. يجب أن يبدأ بـ 01 ويحتوي على 11 رقمًا';
+    }
+    
+    return '';
+  };
+
+  // دالة لمعالجة تغيير رقم الهاتف مع التحقق من الصحة
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const phone = e.target.value;
+    setFormData({...formData, phone});
+    
+    // التحقق من صحة رقم الهاتف
+    const phoneError = validatePhone(phone);
+    setErrors({...errors, phone: phoneError});
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // التحقق من صحة رقم الهاتف قبل الإرسال
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) {
+      setErrors({...errors, phone: phoneError});
+      return;
+    }
+    
     onSave({ ...formData, id: client?.id });
   };
 
@@ -57,25 +98,62 @@ const ClientModal: React.FC<{
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">الاسم الكامل</label>
-            <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-gray-700 rounded-lg p-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none" required />
+            <input 
+              type="text" 
+              value={formData.name} 
+              onChange={e => setFormData({...formData, name: e.target.value})} 
+              className="w-full bg-gray-700 rounded-lg p-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none" 
+              required 
+            />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">رقم الهاتف</label>
-              <input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full bg-gray-700 rounded-lg p-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none" required />
+              <input 
+                type="tel" 
+                value={formData.phone} 
+                onChange={handlePhoneChange}
+                className={`w-full bg-gray-700 rounded-lg p-3 border ${errors.phone ? 'border-red-500 focus:ring-red-500' : 'border-gray-600 focus:ring-blue-500'} outline-none`} 
+                required 
+              />
+              {errors.phone && (
+                <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">البريد الإلكتروني (اختياري)</label>
-              <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-gray-700 rounded-lg p-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none" />
+              <input 
+                type="email" 
+                value={formData.email} 
+                onChange={e => setFormData({...formData, email: e.target.value})} 
+                className="w-full bg-gray-700 rounded-lg p-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none" 
+              />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">ملاحظات</label>
-            <textarea value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} rows={3} className="w-full bg-gray-700 rounded-lg p-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none" />
+            <textarea 
+              value={formData.notes} 
+              onChange={e => setFormData({...formData, notes: e.target.value})} 
+              rows={3} 
+              className="w-full bg-gray-700 rounded-lg p-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none" 
+            />
           </div>
           <div className="pt-6 flex justify-end gap-4">
-            <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">إلغاء</button>
-            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">حفظ</button>
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+            >
+              إلغاء
+            </button>
+            <button 
+              type="submit" 
+              disabled={!!errors.phone}
+              className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors ${errors.phone ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              حفظ
+            </button>
           </div>
         </form>
       </div>
@@ -128,29 +206,67 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ showToast }) => {
     setEditingClient(null);
   };
 
-  const handleSaveClient = async (data: Omit<Client, 'id' | 'firstContact'> & { id?: number }) => {
-    try {
-      // إضافة نوع العميل لو مش محدد
-      const payload = {
-        ...data,
-        type: (data as any).type || 'buyer', // default 'buyer'
-      };
-
-      if (payload.id) {
-        const updatedClient = await updateCustomer(payload.id, payload);
-        setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c));
-        showToast?.('تم تعديل العميل بنجاح', 'success');
-      } else {
-        const newClient = await addCustomer(payload);
-        setClients([newClient, ...clients]);
-        showToast?.('تم إضافة العميل بنجاح', 'success');
-      }
-      handleCloseModal();
-    } catch (error) {
-      console.error(error);
-      showToast?.('حدث خطأ أثناء حفظ العميل', 'error');
-    }
+const handleSaveClient = async (data: Omit<Client, 'id' | 'firstContact'> & { id?: number }) => {
+  // تعريف payload خارج كتلة try ليكون متاحاً في catch
+  const payload = {
+    ...data,
+    type: (data as any).type || 'buyer', // default 'buyer'
   };
+
+  try {
+    if (payload.id) {
+      await updateCustomer(payload.id, payload);
+      showToast?.('تم تعديل العميل بنجاح', 'success');
+    } else {
+      await addCustomer(payload);
+      showToast?.('تم إضافة العميل بنجاح', 'success');
+    }
+    
+    // إعادة تحميل البيانات لضمان التحديث
+    await refreshData();
+    
+    handleCloseModal();
+  } catch (error: any) {
+    console.error(error);
+    
+    // استخراج رسالة الخطأ المناسبة
+    let errorMessage = 'حدث خطأ أثناء حفظ العميل';
+    
+    if (error.response?.data?.message) {
+      const originalMessage = error.response.data.message;
+      
+      // التحقق من نوع الخطأ (تكرار رقم الهاتف)
+      if (originalMessage.includes("Integrity constraint violation") && 
+          originalMessage.includes("Duplicate entry") && 
+          originalMessage.includes("for key 'phone'")) {
+        
+        // استخراج رقم الهاتف المكرر من رسالة الخطأ
+        const phoneMatch = originalMessage.match(/Duplicate entry '([^']+)'/);
+        const duplicatePhone = phoneMatch ? phoneMatch[1] : payload.phone; // الآن payload متاح هنا
+        
+        errorMessage = `رقم الهاتف "${duplicatePhone}" مسجل مسبقًا. يرجى استخدام رقم آخر.`;
+      }
+      // التحقق من أنواع الأخطاء الأخرى
+      else if (originalMessage.includes("Integrity constraint violation")) {
+        errorMessage = 'بيانات مكررة. يرجى التحقق من أن جميع البيانات فريدة.';
+      }
+      else {
+        errorMessage = originalMessage;
+      }
+    }
+    // التحقق من أخطاء التحقق (validation errors)
+    else if (error.response?.data?.errors) {
+      const errors = error.response.data.errors;
+      errorMessage = Object.values(errors).flat().join(', ');
+    }
+    // إذا كان هناك رسالة خطأ في كائن الخطأ نفسه
+    else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    showToast?.(errorMessage, 'error');
+  }
+};
 
   const handleDeleteClient = async (id: number) => {
     try {

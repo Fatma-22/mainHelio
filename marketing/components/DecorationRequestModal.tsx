@@ -102,20 +102,6 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
       isValid = false;
     }
 
-    // dimensions: required, min 2 chars (you can make this stricter if needed)
-    if (isWallDecor) {
-      if (!dimensions.trim()) {
-        newErrors.dimensions =
-          language === "ar" ? "الأبعاد مطلوبة" : "Dimensions are required";
-        isValid = false;
-      } else if (dimensions.trim().length < 2) {
-        newErrors.dimensions =
-          language === "ar"
-            ? "الأبعاد يجب أن تحتوي على حرفين على الأقل"
-            : "Dimensions must be at least 2 characters";
-        isValid = false;
-      }
-    }
 
     // description: required, min 10 chars
     if (!description.trim()) {
@@ -130,14 +116,7 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
       isValid = false;
     }
 
-    // Only require images for custom requests
-    if (!isSimilarRequest && images.length === 0) {
-      newErrors.images =
-        language === "ar"
-          ? "يجب رفع صورة واحدة على الأقل"
-          : "At least one image is required";
-      isValid = false;
-    }
+
 
     setErrors(newErrors);
     return isValid;
@@ -448,7 +427,7 @@ const DecorationRequestModal: React.FC<DecorationRequestModalProps> = ({
                 <ImageUploader
                   images={images}
                   onImagesChange={handleImagesChange}
-                  minImages={1}
+                  minImages={0}
                   maxImages={1}
                   language={language}
                   hideUploadActions={true} // إخفاء أزرار الرفع المباشرة

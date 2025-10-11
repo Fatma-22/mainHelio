@@ -146,6 +146,7 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
         requesterPhone: editedData.requesterPhone,
         requestDate: editedData.requestDate,
         gallery: editedData.gallery?.map(mapImageItemToApiImage),
+        ownertype:editedData.ownertype
       };
 
       onEditAndApprove(propertyData, selectedRequest.id);
@@ -248,7 +249,7 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
       )}
       <div className="flex h-[calc(100vh-150px)] bg-gray-800 rounded-xl shadow-lg overflow-hidden">
         {/* Request List */}
-        <div className="w-1/3 border-l border-gray-700 flex flex-col">
+        <div className="w-1/4 border-l border-gray-700 flex flex-col">
           <div className="p-4 border-b border-gray-700 flex justify-between items-center">
             <div>
               <h2 className="text-xl font-bold text-white">
@@ -293,8 +294,9 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
             ))}
           </ul>
         </div>
-        {/* Request Viewer */}
-        <div className="w-2/3 flex flex-col">
+        
+        {/* Request Viewer - تم توسيعه إلى 3/4 */}
+        <div className="w-3/4 flex flex-col">
           {selectedRequest ? (
             <>
               <div className="p-4 border-b border-gray-700 flex justify-between items-center">
@@ -312,11 +314,22 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => onReject(selectedRequest.id)}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-                  >
-                    رفض
-                  </button>
+                      onClick={async () => {
+                        try {
+                          await onReject(selectedRequest.id);
+                          setRequests((prev) => prev.filter((r) => r.id !== selectedRequest.id));
+                          setSelectedRequest(null);
+                          showToast?.("تم رفض الطلب وحذفه بنجاح", "success");
+                        } catch (err) {
+                          console.error(err);
+                          showToast?.("حدث خطأ أثناء رفض الطلب", "error");
+                        }
+                      }}
+                      className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                    >
+                      رفض
+                    </button>
+
                   <button
                     onClick={handleEditClick}
                     className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors"
@@ -332,238 +345,185 @@ const PropertyRequestsPage: React.FC<PropertyRequestsPageProps> = ({
                 </div>
               </div>
 
-              {/* عرض تفاصيل الطلب */}
+              {/* عرض تفاصيل الطلب - مع إعادة تنظيم أفضل */}
               <div className="p-6 overflow-y-auto flex-1">
-                <div className="mb-6">
-                  <h4 className="text-md font-bold text-white mb-2">
-                    عنوان العقار
-                  </h4>
-                  <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                    <p className="text-gray-300">{selectedRequest.title}</p>
-                  </div>
-                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* العمود الأيسر - المعلومات الأساسية */}
+                  <div className="space-y-6">
+                    {/* عنوان العقار */}
+                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                      <h4 className="text-md font-bold text-white mb-2">عنوان العقار</h4>
+                      <p className="text-gray-300 text-lg">{selectedRequest.title}</p>
+                    </div>
 
-                <div className="mb-6">
-                  <h4 className="text-md font-bold text-white mb-2">
-                    وصف العقار
-                  </h4>
-                  <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                    <p className="text-gray-300">
-                      {selectedRequest.description}
-                    </p>
-                  </div>
-                </div>
+                    {/* وصف العقار */}
+                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                      <h4 className="text-md font-bold text-white mb-2">وصف العقار</h4>
+                      <p className="text-gray-300">{selectedRequest.description}</p>
+                    </div>
 
-                {/* 🔹 قسم عرض الصور - التعديل الرئيسي هنا */}
-                <div className="mb-6">
-                  <h4 className="text-md font-bold text-white mb-2">
-                    صور العقار
-                  </h4>
-                  {selectedRequest.gallery &&
-                  selectedRequest.gallery.length > 0 ? (
+                    {/* معلومات السعر والمساحة */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                        <h4 className="text-md font-bold text-white mb-2">السعر</h4>
+                        <p className="text-gray-300 text-lg">{selectedRequest.price}</p>
+                      </div>
+                      <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                        <h4 className="text-md font-bold text-white mb-2">المساحة</h4>
+                        <p className="text-gray-300 text-lg">{selectedRequest.area} م²</p>
+                      </div>
+                    </div>
+
+                    {/* معلومات النوع والحالة والتشطيب */}
                     <div className="grid grid-cols-3 gap-4">
-                      {selectedRequest.gallery.map((image, index) => {
-                        // استخدام الدوال المساعدة للحصول على بيانات الصورة
-                        const imageUrl = getImageUrl(image);
-                        const imageAlt = getImageAlt(image);
-                        const isFeatured = getImageFeatured(image);
+                      <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                        <h4 className="text-md font-bold text-white mb-2">النوع</h4>
+                        <p className="text-gray-300">{selectedRequest.type}</p>
+                      </div>
+                      <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                        <h4 className="text-md font-bold text-white mb-2">الحالة</h4>
+                        <p className="text-gray-300">{selectedRequest.status}</p>
+                      </div>
+                      <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                        <h4 className="text-md font-bold text-white mb-2">التشطيب</h4>
+                        <p className="text-gray-300">{selectedRequest.finish}</p>
+                      </div>
+                    </div>
 
-                        return (
-                          <div
-                            key={index}
-                            className="relative group cursor-pointer rounded-lg overflow-hidden bg-gray-900/50 border border-gray-700 aspect-square"
-                            onClick={() => openEnlargedImage(imageUrl, index)}
-                          >
-                            <img
-                              src={imageUrl}
-                              alt={imageAlt}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                            {isFeatured && (
-                              <span className="absolute top-2 left-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded">
-                                مميزة
-                              </span>
-                            )}
+                    {/* معلومات الغرف والحمامات */}
+                    {(selectedRequest.bedrooms || selectedRequest.bathrooms) && (
+                      <div className="grid grid-cols-2 gap-4">
+                        {selectedRequest.bedrooms && (
+                          <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                            <h4 className="text-md font-bold text-white mb-2">عدد الغرف</h4>
+                            <p className="text-gray-300">{selectedRequest.bedrooms}</p>
                           </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="bg-gray-900/50 p-8 rounded-lg border border-gray-700 flex justify-center items-center">
-                      <p className="text-gray-500 italic">
-                        لا توجد صور مرفقة مع هذا الطلب
-                      </p>
-                    </div>
-                  )}
-                </div>
-                {!!selectedRequest?.videos?.length && (
-                  <div className="grid grid-cols-3 gap-4">
-                    {selectedRequest?.videos.map((video, index) => {
-                      return (
-                        <div key={video.id || index}>
-                          <a
-                            href={video?.thumbnail_url}
-                            target="_blank"
-                            className="flex-shrink-0"
-                          >
-                            <img
-                              src={video?.thumbnail_url}
-                              alt="Video thumbnail"
-                              className=" size-full object-cover rounded"
-                              onError={(e) => {
-                                // Fallback to default thumbnail if maxres doesn't exist
-                                e.currentTarget.src = video?.thumbnail_url;
-                              }}
-                            />
-                          </a>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <h4 className="text-md font-bold text-white mb-2">السعر</h4>
-                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                      <p className="text-gray-300">{selectedRequest.price}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-md font-bold text-white mb-2">
-                      المساحة
-                    </h4>
-                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                      <p className="text-gray-300">{selectedRequest.area} م²</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="flex flex-col h-full">
-                    <h4 className="text-md font-bold text-white mb-2">النوع</h4>
-                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 flex-1">
-                      <p className="text-gray-300">{selectedRequest.type}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col h-full">
-                    <h4 className="text-md font-bold text-white mb-2">
-                      الحالة
-                    </h4>
-                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 flex-1">
-                      <p className="text-gray-300">{selectedRequest.status}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col h-full">
-                    <h4 className="text-md font-bold text-white mb-2">
-                      التشطيب
-                    </h4>
-                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 flex-1">
-                      <p className="text-gray-300">{selectedRequest.finish}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {(selectedRequest.bedrooms || selectedRequest.bathrooms) && (
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    {selectedRequest.bedrooms && (
-                      <div>
-                        <h4 className="text-md font-bold text-white mb-2">
-                          عدد الغرف
-                        </h4>
-                        <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                          <p className="text-gray-300">
-                            {selectedRequest.bedrooms}
-                          </p>
-                        </div>
+                        )}
+                        {selectedRequest.bathrooms && (
+                          <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                            <h4 className="text-md font-bold text-white mb-2">عدد الحمامات</h4>
+                            <p className="text-gray-300">{selectedRequest.bathrooms}</p>
+                          </div>
+                        )}
                       </div>
                     )}
-                    {selectedRequest.bathrooms && (
-                      <div>
-                        <h4 className="text-md font-bold text-white mb-2">
-                          عدد الحمامات
-                        </h4>
-                        <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                          <p className="text-gray-300">
-                            {selectedRequest.bathrooms}
-                          </p>
-                        </div>
+
+                    {/* العنوان */}
+                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                      <h4 className="text-md font-bold text-white mb-2">العنوان</h4>
+                      <p className="text-gray-300">{selectedRequest.address}</p>
+                    </div>
+
+                    {/* رابط خرائط جوجل */}
+                    {selectedRequest.googleMapsUrl && (
+                      <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                        <h4 className="text-md font-bold text-white mb-2">رابط خرائط جوجل</h4>
+                        <a
+                          href={selectedRequest.googleMapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:text-blue-300"
+                        >
+                          عرض على الخرائط
+                        </a>
                       </div>
                     )}
                   </div>
-                )}
 
-                {/* 🔹 قسم عرض الكلمات المفتاحية */}
-                <div className="mb-6">
-                  <h4 className="text-md font-bold text-white mb-2">
-                    الكلمات المفتاحية
-                  </h4>
-                  <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                    {renderKeywords()}
-                  </div>
-                </div>
+                  {/* العمود الأيمن - الصور والمعلومات الإضافية */}
+                  <div className="space-y-6">
+                    {/* صور العقار */}
+                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                      <h4 className="text-md font-bold text-white mb-3">صور العقار</h4>
+                      {selectedRequest.gallery && selectedRequest.gallery.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          {selectedRequest.gallery.map((image, index) => {
+                            const imageUrl = getImageUrl(image);
+                            const imageAlt = getImageAlt(image);
+                            const isFeatured = getImageFeatured(image);
 
-                {/* 🔹 قسم عرض خطة العرض */}
-                <div className="mb-6">
-                  <h4 className="text-md font-bold text-white mb-2">
-                    خطة العرض
-                  </h4>
-                  <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                    {selectedRequest.listingPlane ? (
-                      <p className="text-gray-300">
-                        {selectedRequest.listingPlane}
-                      </p>
-                    ) : (
-                      <p className="text-gray-500 italic">
-                        لا توجد خطة عرض محددة
-                      </p>
+                            return (
+                              <div
+                                key={index}
+                                className="relative group cursor-pointer rounded-lg overflow-hidden bg-gray-900/50 border border-gray-700 aspect-square"
+                                onClick={() => openEnlargedImage(imageUrl, index)}
+                              >
+                                <img
+                                  src={imageUrl}
+                                  alt={imageAlt}
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                />
+                                {isFeatured && (
+                                  <span className="absolute top-2 left-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded">
+                                    مميزة
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="p-8 flex justify-center items-center">
+                          <p className="text-gray-500 italic">لا توجد صور مرفقة مع هذا الطلب</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* الفيديوهات */}
+                    {!!selectedRequest?.videos?.length && (
+                      <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                        <h4 className="text-md font-bold text-white mb-3">فيديوهات العقار</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          {selectedRequest?.videos.map((video, index) => {
+                            return (
+                              <div key={video.id || index}>
+                                <a
+                                  href={video?.thumbnail_url}
+                                  target="_blank"
+                                  className="flex-shrink-0"
+                                >
+                                  <img
+                                    src={video?.thumbnail_url}
+                                    alt="Video thumbnail"
+                                    className="w-full h-full object-cover rounded"
+                                    onError={(e) => {
+                                      e.currentTarget.src = video?.thumbnail_url;
+                                    }}
+                                  />
+                                </a>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     )}
-                  </div>
-                </div>
 
-                <div className="mb-6">
-                  <h4 className="text-md font-bold text-white mb-2">العنوان</h4>
-                  <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                    <p className="text-gray-300">{selectedRequest.address}</p>
-                  </div>
-                </div>
-
-                {selectedRequest.googleMapsUrl && (
-                  <div className="mb-6">
-                    <h4 className="text-md font-bold text-white mb-2">
-                      رابط خرائط جوجل
-                    </h4>
+                    {/* الكلمات المفتاحية */}
                     <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                      <a
-                        href={selectedRequest.googleMapsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300"
-                      >
-                        عرض على الخرائط
-                      </a>
+                      <h4 className="text-md font-bold text-white mb-2">الكلمات المفتاحية</h4>
+                      {renderKeywords()}
                     </div>
-                  </div>
-                )}
 
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <h4 className="text-md font-bold text-white mb-2">
-                      تاريخ الطلب
-                    </h4>
+                    {/* خطة العرض */}
                     <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                      <p className="text-gray-300">
-                        {selectedRequest.requestDate}
-                      </p>
+                      <h4 className="text-md font-bold text-white mb-2">خطة العرض</h4>
+                      {selectedRequest.listingPlane ? (
+                        <p className="text-gray-300">{selectedRequest.listingPlane}</p>
+                      ) : (
+                        <p className="text-gray-500 italic">لا توجد خطة عرض محددة</p>
+                      )}
                     </div>
-                  </div>
-                  <div>
-                    <h4 className="text-md font-bold text-white mb-2">
-                      تاريخ انتهاء العرض
-                    </h4>
-                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                      <p className="text-gray-300">
-                        {selectedRequest.listingEndDate}
-                      </p>
+
+                    {/* التواريخ */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                        <h4 className="text-md font-bold text-white mb-2">تاريخ الطلب</h4>
+                        <p className="text-gray-300">{selectedRequest.requestDate}</p>
+                      </div>
+                      <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                        <h4 className="text-md font-bold text-white mb-2">تاريخ انتهاء العرض</h4>
+                        <p className="text-gray-300">{selectedRequest.listingEndDate}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
