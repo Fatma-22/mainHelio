@@ -163,15 +163,6 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
       newErrors.price = "السعر يجب أن يكون رقمًا";
     } else if (Number(formData.price) <= 0) {
       newErrors.price = "السعر يجب أن يكون أكبر من صفر";
-    } else {
-      // التحقق من الحد الأقصى للسعر حسب نوع الإعلان
-      const priceValue = Number(formData.price);
-      
-      if (formData.status === "للإيجار" && priceValue > 300000) {
-        newErrors.price = "السعر المسموح به للإيجار لا يجب أن يتجاوز 300,000";
-      } else if ((formData.status === "للبيع" || formData.status === "شراكة") && priceValue > 100000000) {
-        newErrors.price = "السعر المسموح به للبيع أو الشراكة لا يجب أن يتجاوز 100,000,000";
-      }
     }
 
     // فاليدشن على الوصف
@@ -489,14 +480,6 @@ const PropertyModal: React.FC<PropertyModalProps> = ({
             {errors.price && (
               <p className="mt-1 text-sm text-red-500">{errors.price}</p>
             )}
-            {/* نص توضيحي لحدود السعر */}
-            <p className="text-xs text-gray-400 mt-1">
-              {formData.status === "للإيجار" 
-                ? "السعر المسموح به للإيجار لا يجب أن يتجاوز 300,000" 
-                : (formData.status === "للبيع" || formData.status === "شراكة") 
-                  ? "السعر المسموح به للبيع أو الشراكة لا يجب أن يتجاوز 100,000,000" 
-                  : ""}
-            </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
