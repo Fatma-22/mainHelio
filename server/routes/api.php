@@ -220,4 +220,11 @@ Route::get('/blog-posts/{id}', [BlogController::class, 'show']);
 // User-related extra routes
 Route::apiResource('users', UserController::class);
 Route::get('/site-content', [SiteContentController::class, 'show']);
+Route::get('/permissions', function () {
+    return response()->json([
+        'can_add_property' => true,
+        'can_edit_property' => true,
+        'can_delete_property' => true,
+    ]);
+});
 

@@ -94,7 +94,7 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({
     }
 
     const defaultMin = activeTab === "buy" ? 100000 : 1000;
-    const defaultMax = activeTab === "buy" ? 90000000 : 90000;
+    const defaultMax = activeTab === "buy" ? 100000000 : 300000;
 
     const min = minPriceFilter ? parseFloat(minPriceFilter) : defaultMin;
     const max = maxPriceFilter ? parseFloat(maxPriceFilter) : defaultMax;
@@ -145,7 +145,7 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({
     const percentage = value / 100;
 
     const defaultMin = activeTab === "buy" ? 100000 : 1000;
-    const defaultMax = activeTab === "buy" ? 90000000 : 90000;
+    const defaultMax = activeTab === "buy" ? 100000000 : 300000;
     const range = defaultMax - defaultMin;
     const newMax = defaultMin + range * percentage;
 
@@ -156,7 +156,7 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({
 
   const calculateSliderValue = () => {
     const defaultMin = activeTab === "buy" ? 100000 : 1000;
-    const defaultMax = activeTab === "buy" ? 90000000 : 90000;
+    const defaultMax = activeTab === "buy" ? 100000000 : 300000;
     const range = defaultMax - defaultMin;
     const currentRange = priceRange.max - defaultMin;
     return (currentRange / range) * 100;
@@ -221,11 +221,12 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({
     return properties.filter((p) => {
       // دعم العربية والإنجليزية في حالة العقار
       const statusMatch =
-        activeTab === "buy"
-          ? (p as any)?.status === "For Sale" || (p as any)?.status === "للبيع"
-          : (p as any)?.status === "For Rent" ||
-            (p as any)?.status === "إيجار" ||
-            (p as any)?.status === "للإيجار";
+      activeTab === "buy"
+        ? ["For Sale", "للبيع", "شراكة", "Partnership"].includes(
+            (p as any)?.status
+          )
+        : ["For Rent", "إيجار", "للإيجار"].includes((p as any)?.status);
+
 
       const normalizedType = normalizePropertyType(p.type);
 
@@ -439,7 +440,7 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({
               <div className="flex justify-between text-xs text-gray-400">
                 <span>{formatNumber(activeTab === "buy" ? 100000 : 1000)}</span>
                 <span>
-                  {formatNumber(activeTab === "buy" ? 90000000 : 90000)}
+                  {formatNumber(activeTab === "buy" ? 100000000 : 300000)}
                 </span>
               </div>
             </div>

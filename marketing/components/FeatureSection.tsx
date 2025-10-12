@@ -80,12 +80,27 @@ const FeatureSection: React.FC<FeatureSectionProps> = (props) => {
 
   // دالة مساعدة لعرض حالة العقار باللغة المناسبة
   const getStatusDisplay = () => {
-    if ((displayStatus as any) === "For Sale" || displayStatus === "للبيع") {
-      return language === "ar" ? "للبيع" : "For Sale";
-    } else {
-      return language === "ar" ? "للإيجار" : "For Rent";
-    }
-  };
+  const statusLower = (displayStatus || "").toLowerCase();
+
+  // لو الحالة شراكة
+  if (statusLower.includes("شراكة") || statusLower.includes("partnership")) {
+    return language === "ar" ? "أرض شراكة" : "Land Partnership";
+  }
+
+  // بيع
+  if (statusLower.includes("sale") || displayStatus === "للبيع") {
+    return language === "ar" ? "للبيع" : "For Sale";
+  }
+
+  // إيجار
+  if (statusLower.includes("rent") || displayStatus === "للإيجار") {
+    return language === "ar" ? "للإيجار" : "For Rent";
+  }
+
+  // افتراضي
+  return displayStatus;
+};
+
 
   return (
     <Link to={`/properties/${id}`} className="block h-full">

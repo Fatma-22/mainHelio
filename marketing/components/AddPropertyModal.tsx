@@ -176,6 +176,15 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
       newErrors.price = errorMessages.priceRequired;
     } else if (isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
       newErrors.price = errorMessages.priceInvalid;
+    } else {
+      // التحقق من الحد الأقصى للسعر حسب نوع الإعلان
+      const priceValue = Number(formData.price);
+      
+      if (formData.status === "للإيجار" && priceValue > 300000) {
+        newErrors.price = "السعر المسموح به للإيجار لا يجب أن يتجاوز 300,000";
+      } else if ((formData.status === "للبيع" || formData.status === "شراكة") && priceValue > 100000000) {
+        newErrors.price = "السعر المسموح به للبيع أو الشراكة لا يجب أن يتجاوز 100,000,000";
+      }
     }
 
     // bedrooms: string (should be integer >= 0, required for "شقة" and "فيلا")
@@ -767,6 +776,14 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
                           {errors.price}
                         </div>
                       )}
+                      {/* نص توضيحي لحدود السعر */}
+                      <div className="text-xs text-gray-400 mt-1">
+                        {formData.status === "للإيجار" 
+                          ? "السعر المسموح به للإيجار لا يجب أن يتجاوز 300,000" 
+                          : (formData.status === "للبيع" || formData.status === "شراكة") 
+                            ? "السعر المسموح به للبيع أو الشراكة لا يجب أن يتجاوز 100,000,000" 
+                            : ""}
+                      </div>
                     </FormField>
                   </div>
                   <div className="md:col-span-2">

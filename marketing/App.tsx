@@ -12,7 +12,6 @@ import DecorationsPage from "./components/DecorationsPage";
 import ContactPage from "./components/ContactPage";
 import FavoritesPage from "./components/FavoritesPage";
 import ScrollToTop from "./components/ScrollToTop";
-import Chatbot from "./components/Chatbot";
 import QuietZone from "./components/QuietZone";
 import { FavoritesProvider } from "./components/shared/FavoritesContext";
 import { SiteContent, Property } from "./types";
